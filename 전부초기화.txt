@@ -1,0 +1,4 @@
+delete from bingo_cells;
+delete from team_members;
+delete from teams;
+delete from games;

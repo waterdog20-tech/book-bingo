@@ -1,0 +1,15 @@
+update games
+set
+  status = 'playing',
+  winner_team_id = null
+where name = '빙고';
+
+update bingo_cells
+set
+  is_checked = false,
+  checked_by_member_id = null,
+  checked_by_member_name = null,
+  checked_at = null
+where game_id in (
+  select id from games where name = '빙고'
+);

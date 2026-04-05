@@ -1,0 +1,1306 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import confetti from "canvas-confetti";
+import { supabase } from "@/lib/supabase";
+
+type Game = {
+  id: string;
+  name: string;
+  status: "waiting" | "setup_opponent" | "setup_self" | "playing" | "finished";
+  winner_team_id: string | null;
+};
+
+type Team = {
+  id: string;
+  game_id: string;
+  name: string;
+  team_order: number;
+};
+
+type Member = {
+  id: string;
+  team_id: string;
+  name: string;
+  is_leader: boolean;
+};
+
+type BingoCell = {
+  id: string;
+  game_id: string;
+  team_id: string;
+  cell_number: number;
+  opponent_slot: number | null;
+  title: string | null;
+  image_url: string | null;
+  filled_by_team_id: string | null;
+  filled_by_member_id: string | null;
+  is_checked: boolean;
+  checked_by_member_id: string | null;
+  checked_by_member_name: string | null;
+  checked_at: string | null;
+};
+
+const OPPONENT_SLOT_NUMBERS = [1, 7, 13, 19, 25];
+
+function countBingos(cells: BingoCell[]) {
+  const checked = new Set(
+    cells.filter((cell) => cell.is_checked).map((cell) => cell.cell_number)
+  );
+
+  const lines = [
+    [1, 2, 3, 4, 5],
+    [6, 7, 8, 9, 10],
+    [11, 12, 13, 14, 15],
+    [16, 17, 18, 19, 20],
+    [21, 22, 23, 24, 25],
+    [1, 6, 11, 16, 21],
+    [2, 7, 12, 17, 22],
+    [3, 8, 13, 18, 23],
+    [4, 9, 14, 19, 24],
+    [5, 10, 15, 20, 25],
+    [1, 7, 13, 19, 25],
+    [5, 9, 13, 17, 21],
+  ];
+
+  return lines.filter((line) => line.every((n) => checked.has(n))).length;
+}
+
+export default function TeamPage() {
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const [gameId, setGameId] = useState("");
+  const [teamId, setTeamId] = useState("");
+  const [memberId, setMemberId] = useState("");
+  const [memberName, setMemberName] = useState("");
+  const [isLeader, setIsLeader] = useState(false);
+
+  const [game, setGame] = useState<Game | null>(null);
+  const [myTeam, setMyTeam] = useState<Team | null>(null);
+  const [opponentTeam, setOpponentTeam] = useState<Team | null>(null);
+  const [member, setMember] = useState<Member | null>(null);
+
+  const [myCells, setMyCells] = useState<BingoCell[]>([]);
+  const [opponentCells, setOpponentCells] = useState<BingoCell[]>([]);
+
+  const [formTitles, setFormTitles] = useState<Record<number, string>>({});
+  const [formImages, setFormImages] = useState<Record<number, string>>({});
+
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+
+  const [savingCellId, setSavingCellId] = useState<string | null>(null);
+  const [bingoSubmitting, setBingoSubmitting] = useState(false);
+
+  const [showWinEffect, setShowWinEffect] = useState(false);
+  const [showLoseEffect, setShowLoseEffect] = useState(false);
+  const [resultChecked, setResultChecked] = useState(false);
+
+  const [showLineEffect, setShowLineEffect] = useState(false);
+  const [lineEffectCount, setLineEffectCount] = useState(0);
+
+  const bingoCount = useMemo(() => countBingos(myCells), [myCells]);
+
+  const canBingo =
+    game?.status === "playing" &&
+    bingoCount >= 3 &&
+    !bingoSubmitting &&
+    !game?.winner_team_id;
+
+  const isWinner =
+    !!game?.winner_team_id && !!myTeam?.id && game.winner_team_id === myTeam.id;
+
+  function runWinEffect() {
+    setShowWinEffect(false);
+
+    setTimeout(() => {
+      setShowWinEffect(true);
+
+      const duration = 4200;
+      const end = Date.now() + duration;
+
+      const frame = () => {
+        confetti({
+          particleCount: 18,
+          angle: 60,
+          spread: 80,
+          startVelocity: 55,
+          origin: { x: 0, y: 0.7 },
+        });
+
+        confetti({
+          particleCount: 18,
+          angle: 120,
+          spread: 80,
+          startVelocity: 55,
+          origin: { x: 1, y: 0.7 },
+        });
+
+        confetti({
+          particleCount: 24,
+          spread: 120,
+          startVelocity: 50,
+          origin: { x: 0.5, y: 0.45 },
+        });
+
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      };
+
+      frame();
+
+      setTimeout(() => {
+        setShowWinEffect(false);
+      }, 4600);
+    }, 50);
+  }
+
+  function runLoseEffect() {
+    setShowLoseEffect(false);
+
+    setTimeout(() => {
+      setShowLoseEffect(true);
+
+      setTimeout(() => {
+        setShowLoseEffect(false);
+      }, 4000); // 4초 동안 좌절 감상
+    }, 50);
+  }
+
+  function runLineEffect() {
+    setShowLineEffect(true);
+
+    confetti({
+      particleCount: 80,
+      spread: 80,
+      origin: { y: 0.35 },
+    });
+
+    setTimeout(() => {
+      setShowLineEffect(false);
+    }, 1400);
+  }
+
+  async function resizeImage(file: File): Promise<File> {
+    const imageBitmap = await createImageBitmap(file);
+
+    const maxSize = 1600;
+    let { width, height } = imageBitmap;
+
+    if (width > height) {
+      if (width > maxSize) {
+        height = Math.round((height * maxSize) / width);
+        width = maxSize;
+      }
+    } else if (height > maxSize) {
+      width = Math.round((width * maxSize) / height);
+      height = maxSize;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      throw new Error("이미지 처리용 캔버스를 생성하지 못했습니다.");
+    }
+
+    ctx.drawImage(imageBitmap, 0, 0, width, height);
+
+    const blob: Blob | null = await new Promise((resolve) => {
+      canvas.toBlob(resolve, "image/jpeg", 0.82);
+    });
+
+    if (!blob) {
+      throw new Error("이미지 압축에 실패했습니다.");
+    }
+
+    const baseName = file.name.replace(/\.[^.]+$/, "");
+    return new File([blob], `${baseName}.jpg`, {
+      type: "image/jpeg",
+    });
+  }
+
+  async function uploadImageCompressed(
+    file: File,
+    gameIdValue: string,
+    teamIdValue: string
+  ): Promise<string> {
+    const compressedFile = await resizeImage(file);
+    const fileName = `${gameIdValue}/${teamIdValue}/${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2)}.jpg`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("bingo-images")
+      .upload(fileName, compressedFile, {
+        upsert: true,
+        contentType: "image/jpeg",
+      });
+
+    if (uploadError) {
+      throw uploadError;
+    }
+
+    const { data } = supabase.storage.from("bingo-images").getPublicUrl(fileName);
+    return data.publicUrl;
+  }
+
+  useEffect(() => {
+    const savedGameId = localStorage.getItem("game_id") || "";
+    const savedTeamId = localStorage.getItem("team_id") || "";
+    const savedMemberId = localStorage.getItem("member_id") || "";
+    const savedMemberName = localStorage.getItem("member_name") || "";
+    const savedIsLeader = localStorage.getItem("is_leader") === "true";
+
+    setGameId(savedGameId);
+    setTeamId(savedTeamId);
+    setMemberId(savedMemberId);
+    setMemberName(savedMemberName);
+    setIsLeader(savedIsLeader);
+  }, []);
+
+  const loadData = useCallback(async () => {
+    if (!gameId || !teamId || !memberId) {
+      setLoading(false);
+      setError("접속 정보가 없습니다. 처음부터 다시 접속해주세요.");
+      return;
+    }
+
+    setError("");
+    setMessage("");
+
+    try {
+      const { data: gameData, error: gameError } = await supabase
+        .from("games")
+        .select("id, name, status, winner_team_id")
+        .eq("id", gameId)
+        .single();
+
+      if (gameError) throw gameError;
+      setGame(gameData as Game);
+
+      const { data: teamsData, error: teamsError } = await supabase
+        .from("teams")
+        .select("id, game_id, name, team_order")
+        .eq("game_id", gameId)
+        .order("team_order", { ascending: true });
+
+      if (teamsError) throw teamsError;
+
+      const allTeams = (teamsData || []) as Team[];
+      const myTeamData = allTeams.find((t) => t.id === teamId) || null;
+      const opponentTeamData = allTeams.find((t) => t.id !== teamId) || null;
+
+      setMyTeam(myTeamData);
+      setOpponentTeam(opponentTeamData);
+
+      const { data: memberData, error: memberError } = await supabase
+        .from("team_members")
+        .select("id, team_id, name, is_leader")
+        .eq("id", memberId)
+        .single();
+
+      if (memberError) throw memberError;
+      setMember(memberData as Member);
+
+      const { data: myCellsData, error: myCellsError } = await supabase
+        .from("bingo_cells")
+        .select(
+          "id, game_id, team_id, cell_number, opponent_slot, title, image_url, filled_by_team_id, filled_by_member_id, is_checked, checked_by_member_id, checked_by_member_name, checked_at"
+        )
+        .eq("team_id", teamId)
+        .order("cell_number", { ascending: true });
+
+      if (myCellsError) throw myCellsError;
+      setMyCells((myCellsData || []) as BingoCell[]);
+
+      if (opponentTeamData) {
+        const { data: opponentCellsData, error: opponentCellsError } = await supabase
+          .from("bingo_cells")
+          .select(
+            "id, game_id, team_id, cell_number, opponent_slot, title, image_url, filled_by_team_id, filled_by_member_id, is_checked, checked_by_member_id, checked_by_member_name, checked_at"
+          )
+          .eq("team_id", opponentTeamData.id)
+          .order("cell_number", { ascending: true });
+
+        if (opponentCellsError) throw opponentCellsError;
+        setOpponentCells((opponentCellsData || []) as BingoCell[]);
+      } else {
+        setOpponentCells([]);
+      }
+    } catch (err: any) {
+      setError(err?.message || "데이터를 불러오지 못했습니다.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [gameId, teamId, memberId]);
+
+  useEffect(() => {
+    if (!gameId || !teamId || !memberId) return;
+    setLoading(true);
+    loadData();
+  }, [gameId, teamId, memberId, loadData]);
+
+  useEffect(() => {
+    if (game?.status === "setup_opponent" && opponentCells.length > 0) {
+      const nextTitles: Record<number, string> = {};
+      const nextImages: Record<number, string> = {};
+
+      opponentCells.forEach((cell) => {
+        if (OPPONENT_SLOT_NUMBERS.includes(cell.cell_number)) {
+          nextTitles[cell.cell_number] = cell.title || "";
+          nextImages[cell.cell_number] = cell.image_url || "";
+        }
+      });
+
+      setFormTitles(nextTitles);
+      setFormImages(nextImages);
+    }
+  }, [game?.status, opponentCells]);
+
+  useEffect(() => {
+    if (game?.status === "setup_self" && myCells.length > 0) {
+      const nextTitles: Record<number, string> = {};
+      const nextImages: Record<number, string> = {};
+
+      myCells.forEach((cell) => {
+        if (!OPPONENT_SLOT_NUMBERS.includes(cell.cell_number)) {
+          nextTitles[cell.cell_number] = cell.title || "";
+          nextImages[cell.cell_number] = cell.image_url || "";
+        }
+      });
+
+      setFormTitles(nextTitles);
+      setFormImages(nextImages);
+    }
+  }, [game?.status, myCells]);
+
+  useEffect(() => {
+    if (game?.status !== "finished") {
+      setResultChecked(false);
+    }
+  }, [game?.status]);
+
+  useEffect(() => {
+    if (game?.status !== "playing") {
+      setLineEffectCount(0);
+      return;
+    }
+
+    if (bingoCount > lineEffectCount && bingoCount >= 1) {
+      runLineEffect();
+      setLineEffectCount(bingoCount);
+      return;
+    }
+
+    if (bingoCount < lineEffectCount) {
+      setLineEffectCount(bingoCount);
+    }
+  }, [game?.status, bingoCount, lineEffectCount]);
+
+  const opponentBoardReady = useMemo(() => {
+    if (!opponentCells.length) return false;
+    return OPPONENT_SLOT_NUMBERS.every((n) => {
+      const cell = opponentCells.find((c) => c.cell_number === n);
+      return !!cell?.title && cell.title.trim() !== "";
+    });
+  }, [opponentCells]);
+
+  const myBoardReady = useMemo(() => {
+    if (!myCells.length) return false;
+    return myCells.every((cell) => !!cell.title && cell.title.trim() !== "");
+  }, [myCells]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+  };
+
+  const saveOpponentSlots = async () => {
+    if (!game || !myTeam || !opponentTeam || !member) return;
+
+    for (const n of OPPONENT_SLOT_NUMBERS) {
+      if (!formTitles[n] || !formTitles[n].trim()) {
+        setError(`${n}번 칸의 책 제목을 입력해주세요.`);
+        return;
+      }
+    }
+
+    setSaving(true);
+    setError("");
+    setMessage("");
+
+    try {
+      for (const n of OPPONENT_SLOT_NUMBERS) {
+        const cell = opponentCells.find((c) => c.cell_number === n);
+        if (!cell) {
+          throw new Error(`상대팀 ${n}번 칸을 찾지 못했습니다.`);
+        }
+
+        const { error: updateError } = await supabase
+          .from("bingo_cells")
+          .update({
+            title: formTitles[n].trim(),
+            image_url: formImages[n]?.trim() || null,
+            filled_by_team_id: myTeam.id,
+            filled_by_member_id: member.id,
+          })
+          .eq("id", cell.id);
+
+        if (updateError) throw updateError;
+      }
+
+      const { error: rpcError } = await supabase.rpc("mark_game_setup_self_if_ready", {
+        p_game_id: game.id,
+      });
+
+      if (rpcError) throw rpcError;
+
+      setMessage("상대팀 5칸 입력을 저장했습니다.");
+      await loadData();
+    } catch (err: any) {
+      setError(err?.message || "상대팀 5칸 저장 중 오류가 발생했습니다.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveMySlots = async () => {
+    if (!game || !myTeam || !member) return;
+
+    const myNumbers = Array.from({ length: 25 }, (_, i) => i + 1).filter(
+      (n) => !OPPONENT_SLOT_NUMBERS.includes(n)
+    );
+
+    for (const n of myNumbers) {
+      if (!formTitles[n] || !formTitles[n].trim()) {
+        setError(`${n}번 칸의 책 제목을 입력해주세요.`);
+        return;
+      }
+    }
+
+    setSaving(true);
+    setError("");
+    setMessage("");
+
+    try {
+      for (const n of myNumbers) {
+        const cell = myCells.find((c) => c.cell_number === n);
+        if (!cell) {
+          throw new Error(`내 보드 ${n}번 칸을 찾지 못했습니다.`);
+        }
+
+        const { error: updateError } = await supabase
+          .from("bingo_cells")
+          .update({
+            title: formTitles[n].trim(),
+            image_url: formImages[n]?.trim() || null,
+            filled_by_team_id: myTeam.id,
+            filled_by_member_id: member.id,
+          })
+          .eq("id", cell.id);
+
+        if (updateError) throw updateError;
+      }
+
+      const { error: rpcError } = await supabase.rpc("mark_game_playing_if_ready", {
+        p_game_id: game.id,
+      });
+
+      if (rpcError) throw rpcError;
+
+      setMessage("내 팀 빙고판 20칸을 저장했습니다.");
+      await loadData();
+    } catch (err: any) {
+      setError(err?.message || "내 팀 20칸 저장 중 오류가 발생했습니다.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCheckCell = async (cell: BingoCell) => {
+    if (!game || !myTeam || !member) return;
+
+    if (game.status !== "playing") {
+      setError("플레이 중인 게임에서만 체크할 수 있습니다.");
+      return;
+    }
+
+    if (savingCellId || bingoSubmitting || game.winner_team_id) return;
+
+    setError("");
+    setSavingCellId(cell.id);
+
+    const nextChecked = !cell.is_checked;
+    const previousCells = myCells;
+
+    const optimisticCells = previousCells.map((item) =>
+      item.id === cell.id
+        ? {
+            ...item,
+            is_checked: nextChecked,
+            checked_by_member_id: nextChecked ? member.id : null,
+            checked_by_member_name: nextChecked ? member.name : null,
+            checked_at: nextChecked ? new Date().toISOString() : null,
+          }
+        : item
+    );
+
+    setMyCells(optimisticCells);
+
+    const checkedAt = nextChecked ? new Date().toISOString() : null;
+
+    const { data, error: updateError } = await supabase
+      .from("bingo_cells")
+      .update({
+        is_checked: nextChecked,
+        checked_by_member_id: nextChecked ? member.id : null,
+        checked_by_member_name: nextChecked ? member.name : null,
+        checked_at: checkedAt,
+      })
+      .eq("id", cell.id)
+      .eq("team_id", myTeam.id)
+      .select()
+      .single();
+
+    if (updateError) {
+      setMyCells(previousCells);
+      setError(`체크 저장에 실패했습니다. ${updateError.message}`);
+      setSavingCellId(null);
+      return;
+    }
+
+    setMyCells((prev) =>
+      prev.map((item) => (item.id === cell.id ? (data as BingoCell) : item))
+    );
+
+    setSavingCellId(null);
+  };
+
+  const handleBingo = async () => {
+    if (!game || !myTeam || !member) return;
+
+    if (game.status !== "playing") {
+      setError("현재는 빙고를 선언할 수 없습니다.");
+      return;
+    }
+
+    if (game.winner_team_id) {
+      setError("이미 우승팀이 결정되었습니다.");
+      return;
+    }
+
+    const latestBingoCount = countBingos(myCells);
+    if (latestBingoCount < 3) {
+      setError("빙고 3줄이 완성되어야 선언할 수 있습니다.");
+      return;
+    }
+
+    setError("");
+    setMessage("");
+    setBingoSubmitting(true);
+
+    try {
+      const { error: finishError } = await supabase
+        .from("games")
+        .update({
+          status: "finished",
+          winner_team_id: myTeam.id,
+        })
+        .eq("id", game.id)
+        .is("winner_team_id", null);
+
+      if (finishError) throw finishError;
+
+      setGame((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: "finished",
+              winner_team_id: myTeam.id,
+            }
+          : prev
+      );
+
+      setMessage("빙고를 선언했습니다. 결과 확인 버튼을 눌러 결과를 확인해주세요.");
+    } catch (err: any) {
+      setError(err?.message || "빙고 처리에 실패했습니다.");
+    } finally {
+      setBingoSubmitting(false);
+    }
+  };
+
+  const handleShowResult = () => {
+    if (!game || game.status !== "finished") return;
+    setResultChecked(true);
+
+    if (isWinner) {
+      runWinEffect();
+    } else {
+      runLoseEffect();
+    }
+  };
+
+  const renderCellPreview = (cell: BingoCell) => {
+    const checked = cell.is_checked;
+
+    return (
+      <div
+        key={cell.id}
+        className={`relative rounded-xl border p-3 ${
+          checked
+            ? "border-emerald-400 bg-gradient-to-b from-emerald-50 to-lime-100 shadow-md"
+            : "border-slate-200 bg-white"
+        }`}
+      >
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
+            {cell.cell_number}번
+          </span>
+          {!!cell.opponent_slot && (
+            <span className="rounded-md bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-700">
+              상대팀 입력칸
+            </span>
+          )}
+        </div>
+
+        {checked && (
+          <div className="absolute right-2 top-10 rounded-full bg-emerald-600 px-2 py-1 text-[11px] font-black text-white shadow">
+            CHECK
+          </div>
+        )}
+
+        <div className="mb-2 aspect-square overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+          {cell.image_url ? (
+            <img
+              src={cell.image_url}
+              alt={cell.title || `${cell.cell_number}번 책`}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center text-xs text-slate-400">
+              이미지 없음
+            </div>
+          )}
+        </div>
+
+        <p className="min-h-[40px] text-sm font-semibold text-slate-900">
+          {cell.title || "미입력"}
+        </p>
+
+        {checked && (
+          <div className="mt-2 rounded-lg border border-emerald-300 bg-white/80 px-3 py-2 text-xs font-bold text-emerald-900">
+            {cell.checked_by_member_name
+              ? `${cell.checked_by_member_name} 님이 체크`
+              : "체크됨"}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderPlayableCell = (cell: BingoCell) => {
+    const checked = cell.is_checked;
+    const isSavingCell = savingCellId === cell.id;
+
+    return (
+      <button
+        key={cell.id}
+        type="button"
+        onClick={() => handleCheckCell(cell)}
+        disabled={game?.status !== "playing" || isSavingCell || bingoSubmitting}
+        className={`relative flex min-h-[190px] w-full flex-col overflow-hidden rounded-2xl border text-left transition ${
+          checked
+            ? "border-emerald-500 bg-gradient-to-b from-emerald-50 to-lime-100 ring-4 ring-emerald-300 shadow-lg shadow-emerald-200/70"
+            : "border-slate-200 bg-white hover:border-slate-400 hover:shadow-md"
+        } ${isSavingCell ? "opacity-70" : ""}`}
+      >
+        {checked && (
+          <>
+            <div className="absolute left-2 top-2 z-10 rotate-[-10deg] rounded-md bg-yellow-300 px-2 py-1 text-[11px] font-black text-slate-900 shadow">
+              BINGO
+            </div>
+            <div className="absolute right-2 top-2 z-10 rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-black text-white shadow">
+              완료
+            </div>
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.9),transparent_25%)]" />
+          </>
+        )}
+
+        <div className="aspect-[4/3] w-full bg-slate-100">
+          {cell.image_url ? (
+            <img
+              src={cell.image_url}
+              alt={cell.title ?? `책 ${cell.cell_number}`}
+              className={`h-full w-full object-cover transition ${
+                checked ? "scale-[1.02]" : ""
+              }`}
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-sm text-slate-400">
+              이미지 없음
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-1 flex-col p-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <span className="text-xs font-semibold text-slate-700">
+              #{cell.cell_number}
+            </span>
+            {checked && (
+              <span className="animate-pulse rounded-full bg-emerald-600 px-2 py-1 text-xs font-bold text-white">
+                CHECK
+              </span>
+            )}
+          </div>
+
+          <p className="line-clamp-2 text-sm font-bold text-slate-950">
+            {cell.title || "제목 없음"}
+          </p>
+
+          <div className="mt-auto pt-3">
+            {checked ? (
+              <div className="rounded-lg border border-emerald-300 bg-white/70 px-3 py-2 text-xs font-bold text-emerald-900">
+                {cell.checked_by_member_name
+                  ? `${cell.checked_by_member_name} 님이 체크`
+                  : "체크됨"}
+              </div>
+            ) : (
+              <div className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-medium text-slate-600">
+                클릭해서 체크
+              </div>
+            )}
+          </div>
+        </div>
+      </button>
+    );
+  };
+
+  const renderEditableForm = (target: "opponent" | "self") => {
+    const numbers =
+      target === "opponent"
+        ? OPPONENT_SLOT_NUMBERS
+        : Array.from({ length: 25 }, (_, i) => i + 1).filter(
+            (n) => !OPPONENT_SLOT_NUMBERS.includes(n)
+          );
+
+    return (
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {numbers.map((n) => (
+          <div key={n} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
+                {n}번 칸
+              </span>
+              {target === "opponent" ? (
+                <span className="text-xs font-medium text-amber-700">상대팀 보드</span>
+              ) : (
+                <span className="text-xs font-medium text-blue-700">내 팀 보드</span>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">
+                  책 제목
+                </label>
+                <input
+                  value={formTitles[n] || ""}
+                  onChange={(e) =>
+                    setFormTitles((prev) => ({
+                      ...prev,
+                      [n]: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none placeholder:text-slate-400 focus:border-slate-500"
+                  placeholder="책 제목 입력"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">
+                  이미지 업로드
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+
+                    try {
+                      setSaving(true);
+                      setError("");
+
+                      const publicUrl = await uploadImageCompressed(file, gameId, teamId);
+
+                      setFormImages((prev) => ({
+                        ...prev,
+                        [n]: publicUrl,
+                      }));
+                    } catch (err: any) {
+                      setError(err?.message || "이미지 업로드 중 오류가 발생했습니다.");
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none file:mr-3 file:rounded-lg file:border-0 file:bg-slate-200 file:px-3 file:py-1.5 file:text-slate-700"
+                />
+              </div>
+
+              <div className="aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                {formImages[n] ? (
+                  <img
+                    src={formImages[n]}
+                    alt={`${n}번 미리보기`}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-xs text-slate-400">
+                    이미지 미리보기
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-slate-100 p-6">
+        <div className="mx-auto max-w-6xl rounded-2xl bg-white p-8 shadow">
+          <p className="text-sm font-medium text-slate-700">불러오는 중입니다...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!gameId || !teamId || !memberId) {
+    return (
+      <main className="min-h-screen bg-slate-100 p-6">
+        <div className="mx-auto max-w-4xl rounded-2xl bg-white p-8 shadow">
+          <h1 className="mb-4 text-2xl font-black text-slate-950">팀 화면</h1>
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+            접속 정보가 없습니다. 처음 화면으로 돌아가 다시 접속해주세요.
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-slate-100 p-6">
+      {/* 사용자 정의 애니메이션 CSS 삽입 */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        @keyframes dance {
+          0% { transform: translateY(0) scale(1) rotate(-10deg); }
+          50% { transform: translateY(-30px) scale(1.1) rotate(10deg); }
+          100% { transform: translateY(0) scale(1) rotate(-10deg); }
+        }
+        @keyframes rainFall {
+          0% { transform: translateY(-50px); opacity: 0; }
+          20% { opacity: 1; }
+          80% { opacity: 1; }
+          100% { transform: translateY(100vh); opacity: 0; }
+        }
+        @keyframes shakeSad {
+          0%, 100% { transform: translateX(0) scale(1); }
+          20%, 60% { transform: translateX(-10px) rotate(-5deg) scale(0.9); }
+          40%, 80% { transform: translateX(10px) rotate(5deg) scale(0.9); }
+        }
+        .animate-dance { animation: dance 0.6s infinite ease-in-out; }
+        .animate-rain { animation: rainFall 1.5s linear infinite; }
+        .animate-shake-sad { animation: shakeSad 2s infinite; }
+      `}} />
+
+      {/* 1줄 빙고 이펙트 */}
+      {showLineEffect && (
+        <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center">
+          <div className="rounded-3xl bg-white/95 px-8 py-6 text-center shadow-2xl ring-1 ring-emerald-200">
+            <p className="text-4xl font-black text-emerald-600">✨ BINGO! ✨</p>
+            <p className="mt-2 text-lg font-bold text-slate-900">
+              한 줄이 완성되었습니다.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* 축제 분위기: 승리 이펙트 */}
+      {showWinEffect && (
+        <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          {/* 춤추는 이모지들 */}
+          <div className="absolute inset-0 overflow-hidden flex justify-around items-end pb-20">
+            <div className="text-[80px] animate-dance" style={{ animationDelay: '0s' }}>🕺</div>
+            <div className="text-[70px] animate-dance" style={{ animationDelay: '0.3s' }}>💃</div>
+            <div className="text-[90px] animate-dance" style={{ animationDelay: '0.1s' }}>👯‍♂️</div>
+            <div className="text-[75px] animate-dance" style={{ animationDelay: '0.4s' }}>🙌</div>
+            <div className="text-[85px] animate-dance" style={{ animationDelay: '0.2s' }}>🥳</div>
+          </div>
+
+          <div className="z-10 rounded-3xl bg-white/95 px-12 py-10 text-center shadow-[0_0_50px_rgba(253,224,71,0.5)] ring-4 ring-yellow-400">
+            <p className="text-6xl font-black tracking-wide text-pink-600">🎉 WINNER 🎉</p>
+            <p className="mt-4 text-2xl font-black text-slate-900">
+              우승입니다! 난리 났네요! 🥳
+            </p>
+            <p className="mt-2 text-base font-bold text-slate-700">
+              우리 팀이 가장 먼저 빙고를 완성했습니다.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* 웃픈 좌절 분위기: 패배 이펙트 */}
+      {showLoseEffect && (
+        <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 backdrop-blur-md">
+          {/* 비 내리는 효과 */}
+          <div className="absolute inset-0 overflow-hidden opacity-70">
+            {[...Array(20)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute text-3xl animate-rain"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 2}s`,
+                  animationDuration: `${1 + Math.random()}s`
+                }}
+              >
+                💧
+              </div>
+            ))}
+          </div>
+
+          <div className="z-10 flex flex-col items-center animate-shake-sad">
+            {/* 녹아내리는 표정 */}
+            <div className="text-[120px] drop-shadow-2xl mb-[-20px]">🫠</div>
+            
+            <div className="rounded-3xl bg-slate-800/80 border border-slate-600 px-12 py-10 text-center shadow-2xl">
+              <p className="text-4xl font-black tracking-widest text-slate-200">
+                앗... 졌습니다 🤦‍♂️
+              </p>
+              <p className="mt-4 text-lg font-bold text-slate-400">
+                상대 팀이 먼저 빙고를 스틸해갔어요! 😭
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="mx-auto max-w-7xl rounded-2xl bg-white p-8 shadow">
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-3xl font-black text-slate-950">팀 화면</h1>
+            <p className="mt-1 text-sm font-medium text-slate-700">
+              팀별 빙고판 입력 및 진행 상태를 확인합니다.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="rounded-xl border border-slate-400 bg-white px-4 py-2 text-sm font-bold text-slate-900 shadow-sm disabled:opacity-50"
+          >
+            {refreshing ? "새로고침 중..." : "새로고침"}
+          </button>
+        </div>
+
+        <div className="mb-6 grid gap-4 md:grid-cols-3">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-sm font-medium text-slate-700">게임명</p>
+            <p className="mt-1 text-xl font-bold text-slate-950">{game?.name || "-"}</p>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-sm font-medium text-slate-700">게임 상태</p>
+            <p className="mt-1 text-xl font-bold text-slate-950">{game?.status || "-"}</p>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-sm font-medium text-slate-700">내 정보</p>
+            <p className="mt-1 text-xl font-bold text-slate-950">
+              {member?.name || memberName || "-"} / {member?.is_leader ? "대표" : "팀원"}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-sm font-medium text-slate-700">내 팀</p>
+            <p className="mt-1 text-xl font-bold text-slate-950">{myTeam?.name || "-"}</p>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-sm font-medium text-slate-700">상대팀</p>
+            <p className="mt-1 text-xl font-bold text-slate-950">
+              {opponentTeam?.name || "대기중"}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-sm font-medium text-slate-700">대표 여부</p>
+            <p className="mt-1 text-xl font-bold text-slate-950">{isLeader ? "대표" : "팀원"}</p>
+          </div>
+        </div>
+
+        {error && (
+          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+            {error}
+          </div>
+        )}
+
+        {message && (
+          <div className="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+            {message}
+          </div>
+        )}
+
+        {!opponentTeam && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
+            아직 두 번째 팀이 생성되지 않았습니다. 상대팀 대표가 접속하면 다음 단계로 진행됩니다.
+          </div>
+        )}
+
+        {game?.status === "waiting" && (
+          <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
+            현재는 팀 대기 상태입니다. 두 번째 팀이 생성되면 자동으로 다음 단계로 넘어갑니다.
+          </div>
+        )}
+
+        {game?.status === "setup_opponent" && (
+          <div className="space-y-6">
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+              <strong>상대팀 5칸 입력 단계</strong>
+              <br />
+              대표만 상대팀 빙고판의 <strong>1, 7, 13, 19, 25번</strong> 칸을 입력할 수 있습니다.
+            </div>
+
+            {!isLeader ? (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+                현재는 대표 입력 단계입니다. 대표가 상대팀 5칸을 입력할 때까지 기다려주세요.
+              </div>
+            ) : !opponentTeam ? (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+                상대팀 생성 대기 중입니다.
+              </div>
+            ) : (
+              <>
+                {renderEditableForm("opponent")}
+
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={saveOpponentSlots}
+                    disabled={saving}
+                    className="rounded-xl bg-black px-5 py-3 text-sm font-bold text-white disabled:opacity-50"
+                  >
+                    {saving ? "저장 중..." : "상대팀 5칸 저장"}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {opponentCells.length > 0 && (
+              <div>
+                <h2 className="mb-3 text-lg font-bold text-slate-950">상대팀 보드 미리보기</h2>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                  {opponentCells.map(renderCellPreview)}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {game?.status === "setup_self" && (
+          <div className="space-y-6">
+            <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800">
+              <strong>내 팀 20칸 입력 단계</strong>
+              <br />
+              상대팀이 채워준 5칸을 제외한 나머지 <strong>20칸</strong>을 입력해 빙고판을 완성하세요.
+            </div>
+
+            {!isLeader ? (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+                현재는 대표가 내 팀 빙고판을 완성하는 단계입니다. 대표 입력이 끝날 때까지 기다려주세요.
+              </div>
+            ) : (
+              <>
+                <div>
+                  <h2 className="mb-3 text-lg font-bold text-slate-950">내 팀 보드 현재 상태</h2>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                    {myCells.map(renderCellPreview)}
+                  </div>
+                </div>
+
+                {renderEditableForm("self")}
+
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={saveMySlots}
+                    disabled={saving}
+                    className="rounded-xl bg-black px-5 py-3 text-sm font-bold text-white disabled:opacity-50"
+                  >
+                    {saving ? "저장 중..." : "내 팀 20칸 저장"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {(game?.status === "playing" || game?.status === "finished") && (
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-slate-300 bg-white p-5 shadow-sm">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-700">
+                    {game?.status === "finished" ? "게임 종료" : "현재 빙고 줄"}
+                  </p>
+                  <p className="text-3xl font-black text-slate-950">
+                    {game?.status === "finished" ? "종료" : `${bingoCount}줄`}
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-slate-700">
+                    {game?.status === "finished"
+                      ? "결과를 확인하려면 오른쪽 버튼을 눌러주세요."
+                      : "칸을 클릭하면 체크되고, 다시 클릭하면 체크 해제됩니다. 3줄 이상 완성되면 빙고 버튼이 활성화됩니다."}
+                  </p>
+                </div>
+
+                {game?.status === "playing" ? (
+                  <button
+                    type="button"
+                    onClick={handleBingo}
+                    disabled={!canBingo}
+                    className={`rounded-xl px-5 py-3 text-sm font-black transition ${
+                      canBingo
+                        ? "bg-pink-600 text-white shadow-lg hover:scale-[1.02] hover:bg-pink-500"
+                        : "cursor-not-allowed bg-slate-300 text-white"
+                    }`}
+                  >
+                    {bingoSubmitting ? "처리 중..." : "빙고!"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleShowResult}
+                    className="rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 px-5 py-3 text-sm font-black text-white shadow-lg transition hover:scale-[1.02]"
+                  >
+                    {resultChecked ? "결과 다시 보기" : "결과 확인"}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p className="text-sm font-medium text-slate-700">체크 수</p>
+                <p className="mt-1 text-2xl font-black text-slate-950">
+                  {myCells.filter((cell) => cell.is_checked).length}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p className="text-sm font-medium text-slate-700">빙고 수</p>
+                <p className="mt-1 text-2xl font-black text-slate-950">{bingoCount}</p>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p className="text-sm font-medium text-slate-700">현재 상태</p>
+                <p className="mt-1 text-2xl font-bold text-slate-950">
+                  {game?.status === "finished"
+                    ? "게임 종료"
+                    : savingCellId || bingoSubmitting
+                    ? "처리 중..."
+                    : "플레이 중"}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p className="text-sm font-medium text-slate-700">
+                  {game?.status === "finished" ? "결과 공개" : "빙고 선언 가능"}
+                </p>
+                <p className="mt-1 text-2xl font-bold text-slate-950">
+                  {game?.status === "finished"
+                    ? resultChecked
+                      ? "완료"
+                      : "대기"
+                    : canBingo
+                    ? "가능"
+                    : "불가"}
+                </p>
+              </div>
+            </div>
+
+            {game?.status === "finished" && resultChecked && (
+              <div
+                className={`rounded-xl border px-4 py-3 text-sm font-bold ${
+                  isWinner
+                    ? "border-green-300 bg-green-50 text-green-900"
+                    : "border-red-300 bg-red-50 text-red-900"
+                }`}
+              >
+                {isWinner
+                  ? "게임이 종료되었습니다. 축하합니다! 우리 팀이 빙고를 선언해 우승했습니다."
+                  : "게임이 종료되었습니다. 아쉽지만 상대 팀이 먼저 빙고를 완성했습니다."}
+              </div>
+            )}
+
+            {game?.status === "finished" && !resultChecked && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">
+                게임이 종료되었습니다. 상단 버튼에서 결과를 확인해주세요.
+              </div>
+            )}
+
+            <div>
+              <h2 className="mb-3 text-lg font-bold text-slate-950">내 팀 빙고판</h2>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                {game?.status === "playing"
+                  ? myCells.map(renderPlayableCell)
+                  : myCells.map(renderCellPreview)}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-8 flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              window.location.href = "/";
+            }}
+            className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-900"
+          >
+            홈으로
+          </button>
+        </div>
+
+        {(game?.status === "setup_opponent" || game?.status === "setup_self") && (
+          <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+            참고: 저장 후 상태가 바로 바뀌지 않으면 새로고침 버튼을 눌러 확인하세요.
+          </div>
+        )}
+
+        {game?.status === "setup_opponent" && opponentBoardReady && (
+          <div className="mt-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+            상대팀 5칸 입력이 완료된 상태입니다.
+          </div>
+        )}
+
+        {game?.status === "setup_self" && myBoardReady && (
+          <div className="mt-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+            내 팀 빙고판 25칸이 모두 채워졌습니다.
+          </div>
+        )}
+      </div>
+    </main>
+  );
+}
