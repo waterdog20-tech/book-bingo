@@ -221,7 +221,7 @@ export default function HomePage() {
                     >
                       <div className="absolute inset-x-0 top-0 h-1/2 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.96),transparent_72%)]" />
                       <div className="relative flex h-full flex-col items-center justify-center gap-1">
-                        <span className="text-[12px] font-black uppercase tracking-[0.24em] text-slate-400">
+                        <span className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">
                          BOOK
                         </span>
 
