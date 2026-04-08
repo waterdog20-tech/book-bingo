@@ -71,13 +71,15 @@ export default function HomePage() {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-[24px] border border-[#e4d6bf] bg-[linear-gradient(180deg,#fffdf8_0%,#f8efe1_100%)] p-5 shadow-[0_10px_24px_rgba(73,52,24,0.07)]">
               <p className="text-[11px] font-black tracking-[0.16em] text-[#8b6b39]">
-                GAME FLOW
+                ENTRY FLOW
               </p>
               <p className="mt-3 text-2xl font-black leading-tight text-[#241913]">
-                대표 / 팀원
+                빙고 참가로 바로 시작
               </p>
               <p className="mt-2 break-keep text-sm font-semibold leading-6 text-[#6b5848]">
-                대표는 게임을 생성하거나 입장하고, 팀원은 같은 게임에 참가해 함께 빙고를 진행합니다.
+                홈에서는 참가 버튼만 남기고 단순하게 시작합니다.
+                첫 접속자는 팀의 대표가 되고, 이후 접속자는 같은 팀의 팀원으로
+                합류합니다.
               </p>
             </div>
 
@@ -132,51 +134,34 @@ export default function HomePage() {
             </div>
           )}
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <Link
-              href="/leader"
-              className="group rounded-[26px] border border-[#d8c3a2] bg-[linear-gradient(135deg,#fff8ec_0%,#f8e8c9_100%)] p-6 shadow-[0_12px_28px_rgba(73,52,24,0.10)] transition hover:-translate-y-1 hover:shadow-[0_18px_36px_rgba(73,52,24,0.16)]"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-[11px] font-black tracking-[0.16em] text-[#8b6b39]">
-                    LEADER MODE
-                  </p>
-                  <h2 className="mt-3 text-2xl font-black text-[#241913]">
-                    대표로 시작
-                  </h2>
-                  <p className="mt-3 break-keep text-sm font-semibold leading-6 text-[#6b5848]">
-                    게임을 만들고, 상대 팀 5칸과 우리 팀 빙고판을 설정하는 대표 화면으로 이동합니다.
-                  </p>
-                </div>
-                <div className="rounded-full bg-[#2f2219] px-3 py-2 text-xs font-black text-[#f5d88a] shadow">
-                  START
-                </div>
+          <Link
+            href="/join"
+            className="group block rounded-[28px] border border-[#d8cbe1] bg-[linear-gradient(135deg,#fbf8ff_0%,#efe7ff_100%)] p-6 shadow-[0_14px_32px_rgba(88,62,135,0.12)] transition hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(88,62,135,0.18)] md:p-7"
+          >
+            <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+              <div className="max-w-2xl">
+                <p className="text-[11px] font-black tracking-[0.16em] text-[#7c62a6]">
+                  BINGO ENTRY
+                </p>
+                <h2 className="mt-3 text-3xl font-black leading-tight text-[#241913] md:text-4xl">
+                  빙고 참가
+                </h2>
+                <p className="mt-3 break-keep text-sm font-semibold leading-7 text-[#6b5848] md:text-[15px]">
+                  팀을 선택하고 이름을 입력해 바로 참가하세요.
+                  같은 팀의 첫 접속자는 대표가 되며, 이후 참가자는 자동으로 팀원으로
+                  연결됩니다.
+                </p>
               </div>
-            </Link>
 
-            <Link
-              href="/join"
-              className="group rounded-[26px] border border-[#d8cbe1] bg-[linear-gradient(135deg,#fbf8ff_0%,#efe7ff_100%)] p-6 shadow-[0_12px_28px_rgba(88,62,135,0.10)] transition hover:-translate-y-1 hover:shadow-[0_18px_36px_rgba(88,62,135,0.16)]"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-[11px] font-black tracking-[0.16em] text-[#7c62a6]">
-                    MEMBER MODE
-                  </p>
-                  <h2 className="mt-3 text-2xl font-black text-[#241913]">
-                    팀원 참가
-                  </h2>
-                  <p className="mt-3 break-keep text-sm font-semibold leading-6 text-[#6b5848]">
-                    이미 생성된 게임에 접속해 팀원으로 참여하고, 함께 책 빙고를 진행합니다.
-                  </p>
-                </div>
-                <div className="rounded-full bg-[#5b3f8f] px-3 py-2 text-xs font-black text-white shadow">
-                  JOIN
+              <div className="flex shrink-0 items-center">
+                <div className="rounded-full bg-[linear-gradient(135deg,#5b3f8f_0%,#7c3aed_50%,#ec4899_100%)] px-5 py-3 text-sm font-black text-white shadow">
+                  JOIN NOW
                 </div>
               </div>
-            </Link>
-          </div>
+            </div>
+          </Link>
+
+          
         </div>
       </div>
     </main>
