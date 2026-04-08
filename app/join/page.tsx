@@ -1,27 +1,9 @@
 "use client";
 
-<<<<<<< HEAD
-import { useCallback, useEffect, useMemo, useState } from "react";
-=======
 import { useEffect, useState } from "react";
->>>>>>> d3f6470 (특정 파일만 반영)
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-
-type GameRow = {
-  id: string;
-  name: string;
-  status: "waiting" | "setup_opponent" | "setup_self" | "playing" | "finished";
-  winner_team_id: string | null;
-};
-
-type TeamRow = {
-  id: string;
-  game_id: string;
-  name: string;
-  team_order: number;
-};
 
 type MemberRow = {
   id: string;
@@ -30,21 +12,6 @@ type MemberRow = {
   is_leader: boolean;
 };
 
-<<<<<<< HEAD
-type TeamStatusCard = {
-  teamOrder: 1 | 2;
-  teamName: string;
-  team: TeamRow | null;
-  members: MemberRow[];
-};
-
-const FIXED_GAME_NAME = "빙고";
-const TEAM_OPTIONS = [
-  { order: 1 as const, name: "1팀" },
-  { order: 2 as const, name: "2팀" },
-];
-const OPPONENT_SLOT_NUMBERS = [1, 7, 13, 19, 25];
-=======
 type GameRow = {
   id: string;
   name: string;
@@ -72,28 +39,10 @@ const fireworks = [
  
   
 ];
->>>>>>> d3f6470 (특정 파일만 반영)
 
 export default function JoinPage() {
   const router = useRouter();
 
-<<<<<<< HEAD
-  const [selectedTeamOrder, setSelectedTeamOrder] = useState<1 | 2 | null>(null);
-  const [memberName, setMemberName] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [loadingStatus, setLoadingStatus] = useState(true);
-  const [error, setError] = useState("");
-  const [teamStatusCards, setTeamStatusCards] = useState<TeamStatusCard[]>([
-    { teamOrder: 1, teamName: "1팀", team: null, members: [] },
-    { teamOrder: 2, teamName: "2팀", team: null, members: [] },
-  ]);
-
-  const selectedTeamName = useMemo(() => {
-    if (selectedTeamOrder === 1) return "1팀";
-    if (selectedTeamOrder === 2) return "2팀";
-    return "";
-  }, [selectedTeamOrder]);
-=======
   const [teamName, setTeamName] = useState<"1팀" | "2팀" | "">("");
   const [memberName, setMemberName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -103,7 +52,6 @@ export default function JoinPage() {
 
   const [team1Members, setTeam1Members] = useState<MemberRow[]>([]);
   const [team2Members, setTeam2Members] = useState<MemberRow[]>([]);
->>>>>>> d3f6470 (특정 파일만 반영)
 
   const saveSession = ({
     gameId,
@@ -128,216 +76,6 @@ export default function JoinPage() {
     localStorage.setItem("is_leader", String(isLeader));
   };
 
-<<<<<<< HEAD
-  const sortMembersLeaderFirst = (members: MemberRow[]) => {
-    return [...members].sort((a, b) => {
-      if (a.is_leader === b.is_leader) {
-        return a.name.localeCompare(b.name, "ko");
-      }
-      return a.is_leader ? -1 : 1;
-    });
-  };
-
-  const createBoardCells = async (gameId: string, teamId: string) => {
-    const cells = Array.from({ length: 25 }, (_, index) => {
-      const cellNumber = index + 1;
-      return {
-        game_id: gameId,
-        team_id: teamId,
-        cell_number: cellNumber,
-        opponent_slot: OPPONENT_SLOT_NUMBERS.includes(cellNumber) ? cellNumber : null,
-        title: null,
-        image_url: null,
-        filled_by_team_id: null,
-        filled_by_member_id: null,
-        is_checked: false,
-        checked_by_member_id: null,
-        checked_by_member_name: null,
-        checked_at: null,
-      };
-    });
-
-    const { error } = await supabase.from("bingo_cells").insert(cells);
-    if (error) {
-      throw new Error(`빙고 칸 생성 실패: ${error.message}`);
-    }
-  };
-
-  const ensureGame = async (): Promise<GameRow> => {
-    const { data: existingGame, error: findError } = await supabase
-      .from("games")
-      .select("id, name, status, winner_team_id")
-      .eq("name", FIXED_GAME_NAME)
-      .maybeSingle();
-
-    if (findError) {
-      throw new Error(`게임 조회 실패: ${findError.message}`);
-    }
-
-    if (existingGame) {
-      return existingGame as GameRow;
-    }
-
-    const { data: newGame, error: insertError } = await supabase
-      .from("games")
-      .insert({
-        name: FIXED_GAME_NAME,
-        status: "waiting",
-        winner_team_id: null,
-      })
-      .select("id, name, status, winner_team_id")
-      .single();
-
-    if (insertError || !newGame) {
-      throw new Error(`게임 생성 실패: ${insertError?.message ?? "알 수 없는 오류"}`);
-    }
-
-    return newGame as GameRow;
-  };
-
-  const ensureTeam = async (
-    gameId: string,
-    teamOrder: 1 | 2
-  ): Promise<{ team: TeamRow; created: boolean }> => {
-    const teamName = `${teamOrder}팀`;
-
-    const { data: existingTeam, error: findError } = await supabase
-      .from("teams")
-      .select("id, game_id, name, team_order")
-      .eq("game_id", gameId)
-      .eq("team_order", teamOrder)
-      .maybeSingle();
-
-    if (findError) {
-      throw new Error(`팀 조회 실패: ${findError.message}`);
-    }
-
-    if (existingTeam) {
-      return { team: existingTeam as TeamRow, created: false };
-    }
-
-    const { data: newTeam, error: insertError } = await supabase
-      .from("teams")
-      .insert({
-        game_id: gameId,
-        name: teamName,
-        team_order: teamOrder,
-      })
-      .select("id, game_id, name, team_order")
-      .single();
-
-    if (insertError || !newTeam) {
-      throw new Error(`팀 생성 실패: ${insertError?.message ?? "알 수 없는 오류"}`);
-    }
-
-    await createBoardCells(gameId, newTeam.id);
-
-    return { team: newTeam as TeamRow, created: true };
-  };
-
-  const getOrCreateMember = async (
-    teamId: string,
-    trimmedMemberName: string
-  ): Promise<MemberRow> => {
-    const { data: existingMember, error: existingError } = await supabase
-      .from("team_members")
-      .select("id, team_id, name, is_leader")
-      .eq("team_id", teamId)
-      .eq("name", trimmedMemberName)
-      .maybeSingle();
-
-    if (existingError) {
-      throw new Error(`팀원 조회 실패: ${existingError.message}`);
-    }
-
-    if (existingMember) {
-      return existingMember as MemberRow;
-    }
-
-    const { count: memberCount, error: countError } = await supabase
-      .from("team_members")
-      .select("*", { count: "exact", head: true })
-      .eq("team_id", teamId);
-
-    if (countError) {
-      throw new Error(`팀 인원 수 조회 실패: ${countError.message}`);
-    }
-
-    const shouldBeLeader = (memberCount ?? 0) === 0;
-
-    const { data: newMember, error: insertError } = await supabase
-      .from("team_members")
-      .insert({
-        team_id: teamId,
-        name: trimmedMemberName,
-        is_leader: shouldBeLeader,
-      })
-      .select("id, team_id, name, is_leader")
-      .single();
-
-    if (insertError || !newMember) {
-      throw new Error(`팀원 생성 실패: ${insertError?.message ?? "알 수 없는 오류"}`);
-    }
-
-    return newMember as MemberRow;
-  };
-
-  const syncGameStatusIfNeeded = async (gameId: string) => {
-    const { data: teams, error: teamsError } = await supabase
-      .from("teams")
-      .select("id, game_id, name, team_order")
-      .eq("game_id", gameId)
-      .order("team_order", { ascending: true });
-
-    if (teamsError) {
-      throw new Error(`팀 상태 확인 실패: ${teamsError.message}`);
-    }
-
-    const teamRows = (teams || []) as TeamRow[];
-
-    if (teamRows.length >= 2) {
-      const { error: updateError } = await supabase
-        .from("games")
-        .update({ status: "setup_opponent" })
-        .eq("id", gameId)
-        .in("status", ["waiting"]);
-
-      if (updateError) {
-        throw new Error(`게임 상태 변경 실패: ${updateError.message}`);
-      }
-    } else {
-      const { error: updateError } = await supabase
-        .from("games")
-        .update({ status: "waiting" })
-        .eq("id", gameId)
-        .in("status", ["waiting"]);
-
-      if (updateError) {
-        throw new Error(`게임 상태 유지 실패: ${updateError.message}`);
-      }
-    }
-  };
-
-  const loadTeamStatus = useCallback(async () => {
-    try {
-      setLoadingStatus(true);
-
-      const { data: game, error: gameError } = await supabase
-        .from("games")
-        .select("id, name, status, winner_team_id")
-        .eq("name", FIXED_GAME_NAME)
-        .maybeSingle();
-
-      if (gameError) {
-        throw new Error(`게임 현황 조회 실패: ${gameError.message}`);
-      }
-
-      if (!game) {
-        setTeamStatusCards([
-          { teamOrder: 1, teamName: "1팀", team: null, members: [] },
-          { teamOrder: 2, teamName: "2팀", team: null, members: [] },
-        ]);
-=======
   const createBoardCells = async (gameId: string, teamId: string) => {
     const cells = Array.from({ length: 25 }, (_, i) => ({
       game_id: gameId,
@@ -372,7 +110,6 @@ export default function JoinPage() {
       if (!game) {
         setTeam1Members([]);
         setTeam2Members([]);
->>>>>>> d3f6470 (특정 파일만 반영)
         return;
       }
 
@@ -383,56 +120,6 @@ export default function JoinPage() {
         .order("team_order", { ascending: true });
 
       if (teamsError) {
-<<<<<<< HEAD
-        throw new Error(`팀 현황 조회 실패: ${teamsError.message}`);
-      }
-
-      const teamRows = (teams || []) as TeamRow[];
-      const teamIds = teamRows.map((team) => team.id);
-
-      let memberRows: MemberRow[] = [];
-
-      if (teamIds.length > 0) {
-        const { data: members, error: membersError } = await supabase
-          .from("team_members")
-          .select("id, team_id, name, is_leader")
-          .in("team_id", teamIds);
-
-        if (membersError) {
-          throw new Error(`팀원 현황 조회 실패: ${membersError.message}`);
-        }
-
-        memberRows = (members || []) as MemberRow[];
-      }
-
-      const cards: TeamStatusCard[] = TEAM_OPTIONS.map((option) => {
-        const team = teamRows.find((item) => item.team_order === option.order) || null;
-        const members = team
-          ? sortMembersLeaderFirst(
-              memberRows.filter((member) => member.team_id === team.id)
-            )
-          : [];
-
-        return {
-          teamOrder: option.order,
-          teamName: option.name,
-          team,
-          members,
-        };
-      });
-
-      setTeamStatusCards(cards);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoadingStatus(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadTeamStatus();
-  }, [loadTeamStatus]);
-=======
         throw new Error(`팀 목록 조회 실패: ${teamsError.message}`);
       }
 
@@ -484,44 +171,22 @@ export default function JoinPage() {
     loadTeamStatus();
     setMounted(true);
   }, []);
->>>>>>> d3f6470 (특정 파일만 반영)
 
   const handleJoin = async () => {
     setError("");
 
-<<<<<<< HEAD
-    const trimmedMemberName = memberName.trim();
-
-    if (!selectedTeamOrder) {
-      setError("참가할 팀을 선택해주세요.");
-      return;
-    }
-
-    if (!trimmedMemberName) {
-      setError("이름을 입력해주세요.");
-=======
     const trimmedGameName = "빙고";
     const trimmedTeamName = teamName.trim();
     const trimmedMemberName = memberName.trim();
 
     if (!trimmedTeamName || !trimmedMemberName) {
       setError("팀과 본인 이름을 모두 입력해주세요.");
->>>>>>> d3f6470 (특정 파일만 반영)
       return;
     }
 
     try {
       setLoading(true);
 
-<<<<<<< HEAD
-      const game = await ensureGame();
-      const { team } = await ensureTeam(game.id, selectedTeamOrder);
-
-      const { data: allTeams, error: allTeamsError } = await supabase
-        .from("teams")
-        .select("id, name")
-        .eq("game_id", game.id);
-=======
       let game: GameRow | null = null;
       let team: TeamRow | null = null;
       let member: MemberRow | null = null;
@@ -562,26 +227,11 @@ export default function JoinPage() {
         .select("id, game_id, name, team_order")
         .eq("game_id", game.id)
         .order("team_order", { ascending: true });
->>>>>>> d3f6470 (특정 파일만 반영)
 
       if (allTeamsError) {
         throw new Error(`팀 목록 조회 실패: ${allTeamsError.message}`);
       }
 
-<<<<<<< HEAD
-      const otherTeamIds = (allTeams || [])
-        .filter((item) => item.id !== team.id)
-        .map((item) => item.id);
-
-      if (otherTeamIds.length > 0) {
-        const { data: existingMemberInOtherTeam, error: duplicateError } =
-          await supabase
-            .from("team_members")
-            .select("id, team_id, name")
-            .in("team_id", otherTeamIds)
-            .eq("name", trimmedMemberName)
-            .maybeSingle();
-=======
       const existingTeams = (allTeams || []) as TeamRow[];
       team = existingTeams.find((t) => t.name === trimmedTeamName) || null;
 
@@ -594,18 +244,11 @@ export default function JoinPage() {
           .in("team_id", allTeamIds)
           .eq("name", trimmedMemberName)
           .maybeSingle();
->>>>>>> d3f6470 (특정 파일만 반영)
 
-        if (duplicateError) {
-          throw new Error(`중복 참가 확인 실패: ${duplicateError.message}`);
+        if (memberCheckError) {
+          throw new Error(`중복 참가 확인 실패: ${memberCheckError.message}`);
         }
 
-<<<<<<< HEAD
-        if (existingMemberInOtherTeam) {
-          throw new Error(
-            `'${trimmedMemberName}'님은 이미 다른 팀에 참가 중입니다. 팀을 다시 확인해주세요.`
-          );
-=======
         if (existingMemberCheck) {
           const matchedTeamId = existingMemberCheck.team_id as string;
 
@@ -616,7 +259,6 @@ export default function JoinPage() {
               `'${trimmedMemberName}'님은 이미 '${joinedTeamName}'에 소속되어 있습니다. 본인의 팀을 다시 확인해주세요.`
             );
           }
->>>>>>> d3f6470 (특정 파일만 반영)
         }
       }
 
@@ -714,8 +356,6 @@ export default function JoinPage() {
         }
       }
 
-      await syncGameStatusIfNeeded(game.id);
-
       saveSession({
         gameId: game.id,
         teamId: team.id,
@@ -728,13 +368,7 @@ export default function JoinPage() {
       await loadTeamStatus();
       router.push("/team");
     } catch (err) {
-<<<<<<< HEAD
-      setError(
-        err instanceof Error ? err.message : "빙고 참가 중 오류가 발생했습니다."
-      );
-=======
       setError(err instanceof Error ? err.message : "빙고 참가 중 오류가 발생했습니다.");
->>>>>>> d3f6470 (특정 파일만 반영)
     } finally {
       setLoading(false);
     }
@@ -782,9 +416,6 @@ export default function JoinPage() {
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(255,248,220,0.92),rgba(246,239,228,0.96)_35%,rgba(235,224,205,0.98)_70%,rgba(226,211,188,1)_100%)]" />
       <div className="fixed inset-0 -z-10 opacity-[0.06] [background-image:linear-gradient(rgba(120,96,64,0.28)_1px,transparent_1px),linear-gradient(90deg,rgba(120,96,64,0.28)_1px,transparent_1px)] [background-size:24px_24px]" />
 
-<<<<<<< HEAD
-      <div className="mx-auto max-w-5xl overflow-hidden rounded-[30px] border border-[#e7dcc8] bg-[#fffaf2] shadow-[0_18px_50px_rgba(73,52,24,0.12)]">
-=======
       {/* 배경 풍선 */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         {mounted &&
@@ -846,7 +477,6 @@ export default function JoinPage() {
       </div>
 
       <div className="mx-auto max-w-3xl overflow-hidden rounded-[30px] border border-[#e7dcc8] bg-[#fffaf2] shadow-[0_18px_50px_rgba(73,52,24,0.12)]">
->>>>>>> d3f6470 (특정 파일만 반영)
         <div className="relative border-b border-[#e7dcc8] bg-[linear-gradient(135deg,#2b211b_0%,#4a3429_52%,#5b3f8f_100%)] px-6 py-7 text-white md:px-8 md:py-8">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,215,120,0.12),transparent_28%)]" />
 
@@ -869,95 +499,15 @@ export default function JoinPage() {
               <span className="text-[#ffe89a]">Book Bingo Entry</span>
             </h1>
 
-<<<<<<< HEAD
-            <p className="mt-4 max-w-3xl break-keep text-sm font-medium leading-7 text-white/88 md:text-[15px]">
-              게임 이름은 자동으로 {FIXED_GAME_NAME}로 연결됩니다.
-              팀을 선택하고 이름만 입력하면 참가할 수 있으며, 같은 팀의 첫 참가자는 자동으로 대표가 됩니다.
-=======
             <p className="mt-4 max-w-2xl break-keep text-sm font-medium leading-7 text-white/88 md:text-[15px]">
               1팀 또는 2팀을 선택하고 이름을 입력하면 자동으로 참가됩니다.
               같은 팀의 첫 참가자는 대표가 되며, 이후 참가자는 팀원으로 자동 지정됩니다.
->>>>>>> d3f6470 (특정 파일만 반영)
             </p>
           </div>
         </div>
 
         <div className="space-y-6 px-6 py-6 md:px-8 md:py-8">
           <div className="grid gap-4 md:grid-cols-2">
-<<<<<<< HEAD
-            {teamStatusCards.map((card) => (
-              <div
-                key={card.teamOrder}
-                className={`rounded-[24px] border p-5 shadow-[0_10px_24px_rgba(73,52,24,0.07)] ${
-                  card.teamOrder === 1
-                    ? "border-[#d7c8ef] bg-[linear-gradient(180deg,#fcf9ff_0%,#f1eaff_100%)]"
-                    : "border-[#f0d2de] bg-[linear-gradient(180deg,#fff9fc_0%,#ffedf5_100%)]"
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p
-                      className={`text-[11px] font-black tracking-[0.16em] ${
-                        card.teamOrder === 1 ? "text-[#7156a3]" : "text-[#b35a85]"
-                      }`}
-                    >
-                      TEAM STATUS
-                    </p>
-                    <p className="mt-3 text-2xl font-black leading-tight text-[#241913]">
-                      {card.teamName}
-                    </p>
-                  </div>
-
-                  <span
-                    className={`rounded-full px-3 py-1 text-[11px] font-black shadow ${
-                      card.team
-                        ? "bg-[#2f2219] text-[#f5d88a]"
-                        : "bg-white text-[#8b6b39] ring-1 ring-[#eadfcf]"
-                    }`}
-                  >
-                    {card.team ? "참가 중" : "대기 중"}
-                  </span>
-                </div>
-
-                <div className="mt-4 rounded-[18px] border border-white/70 bg-white/80 p-4">
-                  {loadingStatus ? (
-                    <p className="text-sm font-semibold text-[#6b5848]">
-                      팀원 현황을 불러오는 중입니다...
-                    </p>
-                  ) : card.members.length === 0 ? (
-                    <p className="text-sm font-semibold text-[#6b5848]">
-                      아직 참가한 팀원이 없습니다.
-                    </p>
-                  ) : (
-                    <div className="space-y-2">
-                      {card.members.map((member) => (
-                        <div
-                          key={member.id}
-                          className="flex items-center justify-between gap-3 rounded-2xl border border-[#eadfcf] bg-[#fffaf4] px-3 py-2.5"
-                        >
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-black text-[#241913]">
-                              {member.name}
-                            </p>
-                          </div>
-
-                          <span
-                            className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-black ${
-                              member.is_leader
-                                ? "bg-[linear-gradient(135deg,#2f2219_0%,#4a3429_100%)] text-[#f5d88a]"
-                                : "bg-[#ece3d3] text-[#5c4531]"
-                            }`}
-                          >
-                            {member.is_leader ? "대표" : "팀원"}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-=======
             <div className="rounded-[24px] border border-[#e4d6bf] bg-[linear-gradient(180deg,#fffdf8_0%,#f8efe1_100%)] p-5 shadow-[0_10px_24px_rgba(73,52,24,0.07)]">
               <p className="text-[11px] font-black tracking-[0.16em] text-[#8b6b39]">
                 TEAM STATUS
@@ -977,7 +527,6 @@ export default function JoinPage() {
               </p>
               <div className="mt-3 space-y-2">{renderTeamMembers(team2Members)}</div>
             </div>
->>>>>>> d3f6470 (특정 파일만 반영)
           </div>
 
           <div className="rounded-[26px] border border-[#e4d6bf] bg-[linear-gradient(180deg,#fffdf8_0%,#f8efe1_100%)] p-5 shadow-[0_12px_28px_rgba(73,52,24,0.08)] md:p-6">
@@ -986,60 +535,16 @@ export default function JoinPage() {
                 ENTRY FORM
               </p>
               <h2 className="mt-2 text-2xl font-black text-[#241913]">
-<<<<<<< HEAD
-                팀 선택 후 이름만 입력하세요
-              </h2>
-              <p className="mt-2 break-keep text-sm font-semibold leading-6 text-[#6b5848]">
-                게임 이름은 자동으로 {FIXED_GAME_NAME}에 연결됩니다.
-                참가할 팀을 선택한 뒤 이름을 입력하면 바로 입장합니다.
-=======
                 빙고 참가 정보 입력
               </h2>
               <p className="mt-2 break-keep text-sm font-semibold leading-6 text-[#6b5848]">
                 게임은 자동으로 ‘빙고’로 연결됩니다. 팀을 선택하고 이름을 입력하면 참가합니다.
->>>>>>> d3f6470 (특정 파일만 반영)
               </p>
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-4">
               <div>
                 <label className="mb-2 block text-sm font-black text-[#4d3a28]">
-<<<<<<< HEAD
-                  참가 팀 선택
-                </label>
-
-                <div className="grid gap-3 md:grid-cols-2">
-                  {TEAM_OPTIONS.map((option) => {
-                    const isActive = selectedTeamOrder === option.order;
-
-                    return (
-                      <button
-                        key={option.order}
-                        type="button"
-                        onClick={() => setSelectedTeamOrder(option.order)}
-                        className={`rounded-[22px] border px-5 py-4 text-left transition ${
-                          isActive
-                            ? option.order === 1
-                              ? "border-[#7c62a6] bg-[linear-gradient(135deg,#f5f0ff_0%,#ede3ff_100%)] shadow-[0_10px_24px_rgba(124,98,166,0.18)]"
-                              : "border-[#d36b99] bg-[linear-gradient(135deg,#fff1f7_0%,#ffe7f1_100%)] shadow-[0_10px_24px_rgba(211,107,153,0.18)]"
-                            : "border-[#d9cab1] bg-white hover:bg-[#fff8ec]"
-                        }`}
-                      >
-                        <p className="text-[11px] font-black tracking-[0.16em] text-[#8b6b39]">
-                          TEAM
-                        </p>
-                        <p className="mt-2 text-2xl font-black text-[#241913]">
-                          {option.name}
-                        </p>
-                        <p className="mt-2 text-sm font-semibold text-[#6b5848]">
-                          {option.order === 1
-                            ? "첫 번째 팀으로 참가합니다."
-                            : "두 번째 팀으로 참가합니다."}
-                        </p>
-                      </button>
-                    );
-                  })}
-=======
                   팀 선택
                 </label>
                 <div className="grid grid-cols-2 gap-3">
@@ -1066,7 +571,6 @@ export default function JoinPage() {
                   >
                     2팀
                   </button>
->>>>>>> d3f6470 (특정 파일만 반영)
                 </div>
               </div>
 
@@ -1083,30 +587,13 @@ export default function JoinPage() {
                 />
               </div>
 
-              <div className="rounded-2xl border border-[#eadfcf] bg-white/90 px-4 py-3">
-                <p className="text-sm font-semibold text-[#6b5848]">
-                  선택한 팀:{" "}
-                  <span className="font-black text-[#241913]">
-                    {selectedTeamName || "선택 전"}
-                  </span>
-                </p>
-                <p className="mt-1 text-sm font-semibold text-[#6b5848]">
-                  연결 게임:{" "}
-                  <span className="font-black text-[#241913]">{FIXED_GAME_NAME}</span>
-                </p>
-              </div>
-
               <button
                 type="button"
                 onClick={handleJoin}
                 disabled={loading}
                 className="w-full rounded-[22px] bg-[linear-gradient(135deg,#4b2f74_0%,#6d46a5_55%,#c026d3_100%)] px-5 py-4 text-base font-black text-white shadow-[0_14px_28px_rgba(91,63,143,0.20)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_36px_rgba(91,63,143,0.26)] disabled:opacity-50"
               >
-<<<<<<< HEAD
-                {loading ? "참가 처리 중..." : "빙고 참가"}
-=======
                 {loading ? "참가 중..." : "빙고 참가"}
->>>>>>> d3f6470 (특정 파일만 반영)
               </button>
             </div>
           </div>
@@ -1124,15 +611,6 @@ export default function JoinPage() {
             >
               홈으로 돌아가기
             </Link>
-
-            <button
-              type="button"
-              onClick={loadTeamStatus}
-              disabled={loadingStatus}
-              className="rounded-2xl border border-[#d7c8b0] bg-white px-5 py-3 text-sm font-black text-[#4d3a28] shadow-sm transition hover:bg-[#fff8ec] disabled:opacity-50"
-            >
-              {loadingStatus ? "새로고침 중..." : "팀 현황 새로고침"}
-            </button>
           </div>
         </div>
       </div>
