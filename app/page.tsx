@@ -173,79 +173,12 @@ export default function HomePage() {
               </div>
             </div>
 
-<<<<<<< HEAD
-            <h1 className="text-3xl font-black leading-tight md:text-5xl">
-              다독다독 1st Anniversary
-              <br />
-              <span className="text-[#ffe89a]">Book Bingo</span>
-            </h1>
-
-            <p className="mt-4 max-w-2xl break-keep text-sm font-medium leading-7 text-white/88 md:text-[15px]">
-              독서 동호회 다독다독 1주년 기념 이벤트 게임입니다.
-              팀별로 책 빙고판을 완성하고, 독서 취향과 팀워크로 빙고를 먼저 선언해보세요.
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-6 px-6 py-6 md:px-8 md:py-8">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-[24px] border border-[#e4d6bf] bg-[linear-gradient(180deg,#fffdf8_0%,#f8efe1_100%)] p-5 shadow-[0_10px_24px_rgba(73,52,24,0.07)]">
-              <p className="text-[11px] font-black tracking-[0.16em] text-[#8b6b39]">
-                ENTRY FLOW
-              </p>
-              <p className="mt-3 text-2xl font-black leading-tight text-[#241913]">
-                빙고 참가로 바로 시작
-              </p>
-              <p className="mt-2 break-keep text-sm font-semibold leading-6 text-[#6b5848]">
-                홈에서는 참가 버튼만 남기고 단순하게 시작합니다.
-                첫 접속자는 팀의 대표가 되고, 이후 접속자는 같은 팀의 팀원으로
-                합류합니다.
-              </p>
-            </div>
-
-            <div className="rounded-[24px] border border-[#e4d6bf] bg-[linear-gradient(180deg,#fffdf8_0%,#f8efe1_100%)] p-5 shadow-[0_10px_24px_rgba(73,52,24,0.07)]">
-              <p className="text-[11px] font-black tracking-[0.16em] text-[#8b6b39]">
-                PLAY RULE
-              </p>
-              <p className="mt-3 text-2xl font-black leading-tight text-[#241913]">
-                3줄 완성 후 빙고
-              </p>
-              <p className="mt-2 break-keep text-sm font-semibold leading-6 text-[#6b5848]">
-                체크를 쌓아 3줄 이상 완성되면 빙고를 선언할 수 있습니다.
-                먼저 선언한 팀이 승리합니다.
-              </p>
-            </div>
-          </div>
-
-          {hasSession && (
-            <div className="rounded-[24px] border border-[#cfe0ff] bg-[linear-gradient(180deg,#f5f9ff_0%,#edf4ff_100%)] p-5 shadow-[0_10px_24px_rgba(59,130,246,0.08)]">
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <p className="text-[11px] font-black tracking-[0.16em] text-[#4f6ea8]">
-                    SAVED SESSION
-                  </p>
-                  <p className="mt-2 text-2xl font-black text-[#1f2a44]">
-                    이전 접속 정보가 남아 있습니다
-                  </p>
-                  <p className="mt-2 break-keep text-sm font-semibold text-[#5c6b85]">
-                    팀: <span className="font-black text-[#1f2a44]">{teamName || "-"}</span>
-                    <span className="mx-2 text-[#9aa8bf]">/</span>
-                    이름: <span className="font-black text-[#1f2a44]">{memberName || "-"}</span>
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap gap-3">
-                  <Link
-                    href="/team"
-                    className="rounded-2xl bg-[linear-gradient(135deg,#2f2219_0%,#4a3429_100%)] px-5 py-3 text-sm font-black text-white shadow-[0_10px_20px_rgba(73,52,24,0.18)] transition hover:-translate-y-0.5"
-=======
             <div className="overflow-hidden rounded-full border border-[#eadfcf] bg-white/80 py-2 shadow-inner">
               <div className="flex min-w-max animate-marquee gap-2 px-3">
                 {[...marqueeItems, ...marqueeItems].map((item, index) => (
                   <div
                     key={`${item}-${index}`}
                     className="rounded-full bg-[linear-gradient(90deg,#fff1f2_0%,#fff7ed_50%,#eff6ff_100%)] px-3 py-1.5 text-xs font-black text-[#4d5b73] shadow-sm"
->>>>>>> d3f6470 (특정 파일만 반영)
                   >
                     ✨ {item}
                   </div>
@@ -253,36 +186,6 @@ export default function HomePage() {
               </div>
             </div>
 
-<<<<<<< HEAD
-          <Link
-            href="/join"
-            className="group block rounded-[28px] border border-[#d8cbe1] bg-[linear-gradient(135deg,#fbf8ff_0%,#efe7ff_100%)] p-6 shadow-[0_14px_32px_rgba(88,62,135,0.12)] transition hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(88,62,135,0.18)] md:p-7"
-          >
-            <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-              <div className="max-w-2xl">
-                <p className="text-[11px] font-black tracking-[0.16em] text-[#7c62a6]">
-                  BINGO ENTRY
-                </p>
-                <h2 className="mt-3 text-3xl font-black leading-tight text-[#241913] md:text-4xl">
-                  빙고 참가
-                </h2>
-                <p className="mt-3 break-keep text-sm font-semibold leading-7 text-[#6b5848] md:text-[15px]">
-                  팀을 선택하고 이름을 입력해 바로 참가하세요.
-                  같은 팀의 첫 접속자는 대표가 되며, 이후 참가자는 자동으로 팀원으로
-                  연결됩니다.
-                </p>
-              </div>
-
-              <div className="flex shrink-0 items-center">
-                <div className="rounded-full bg-[linear-gradient(135deg,#5b3f8f_0%,#7c3aed_50%,#ec4899_100%)] px-5 py-3 text-sm font-black text-white shadow">
-                  JOIN NOW
-                </div>
-              </div>
-            </div>
-          </Link>
-
-          
-=======
             <div className="mt-4 rounded-[24px] border border-[#eadfcf] bg-white/90 p-4 shadow-[0_10px_24px_rgba(73,52,24,0.05)]">
               <div className="mb-3 flex items-center justify-between">
                 <div>
@@ -351,7 +254,6 @@ export default function HomePage() {
             빙고 참가하기
           </Link>
        
->>>>>>> d3f6470 (특정 파일만 반영)
         </div>
       </div>
 
