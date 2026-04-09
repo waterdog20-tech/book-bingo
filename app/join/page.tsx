@@ -27,18 +27,33 @@ type TeamRow = {
 };
 
 const balloons = [
-  { left: "34%", size: 74, duration: 18, delay: 4, color: "from-[#f4d99f] to-[#f6ead0]" },
-  { left: "46%", size: 52, duration: 14, delay: 2, color: "from-[#bcd9f7] to-[#d9ecfb]" },
-  { left: "49%", size: 80, duration: 19, delay: 1, color: "from-[#E4d99f] to-[#g6ead0]" },
-  { left: "44%", size: 40, duration: 16, delay: 7, color: "from-[#cdb9f5] to-[#e4d8fb]" },
+  { left: "5%", size: 70, duration: 15, delay: 0, color: "from-pink-400 to-rose-300" },
+  { left: "15%", size: 50, duration: 18, delay: 3, color: "from-sky-400 to-blue-300" },
+  { left: "25%", size: 85, duration: 14, delay: 1, color: "from-yellow-300 to-amber-200" },
+  { left: "38%", size: 60, duration: 16, delay: 4, color: "from-purple-400 to-fuchsia-300" },
+  { left: "50%", size: 90, duration: 20, delay: 0, color: "from-emerald-400 to-teal-300" },
+  { left: "65%", size: 55, duration: 15, delay: 2, color: "from-orange-400 to-red-300" },
+  { left: "80%", size: 75, duration: 17, delay: 5, color: "from-indigo-400 to-cyan-300" },
+  { left: "92%", size: 65, duration: 19, delay: 1, color: "from-pink-300 to-purple-300" }
   
 ];
 
 const fireworks = [
-  { top: "80%", left: "37%", delay: "0s", colors: ["#ff4e50", "#f9d423", "#ffffff"] },
- 
-  
+  { top: "63%", left: "37%", delay: "0s", colors: ["#ff4e50", "#f9d423", "#ffffff"] },
+  { top: "23%", left: "67%", delay: "0s", colors: ["#91e234", "#f9d423", "#ffffff"] }
 ];
+
+const headerGradientStops = [
+  { color: "#081435", stop: "0%" },
+  { color: "#358ddf", stop: "55%" },
+  { color: "#ffffff", stop: "100%" },
+];
+
+const headerGradientStyle = {
+  backgroundImage: `linear-gradient(135deg, ${headerGradientStops
+    .map((item) => `${item.color} ${item.stop}`)
+    .join(", ")})`,
+};
 
 export default function JoinPage() {
   const router = useRouter();
@@ -49,10 +64,10 @@ export default function JoinPage() {
   const [loadingTeams, setLoadingTeams] = useState(true);
   const [error, setError] = useState("");
   const [mounted, setMounted] = useState(false);
-
+  
   const [team1Members, setTeam1Members] = useState<MemberRow[]>([]);
   const [team2Members, setTeam2Members] = useState<MemberRow[]>([]);
-
+    
   const saveSession = ({
     gameId,
     teamId,
@@ -477,7 +492,10 @@ export default function JoinPage() {
       </div>
 
       <div className="mx-auto max-w-3xl overflow-hidden rounded-[30px] border border-[#e7dcc8] bg-[#fffaf2] shadow-[0_18px_50px_rgba(73,52,24,0.12)]">
-        <div className="relative border-b border-[#e7dcc8] bg-[linear-gradient(135deg,#2b211b_0%,#4a3429_52%,#5b3f8f_100%)] px-6 py-7 text-white md:px-8 md:py-8">
+        <div
+  className="relative overflow-hidden border-b border-[#e7dcc8] px-6 py-6 text-white md:px-8 md:py-7"
+  style={headerGradientStyle}
+>
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,215,120,0.12),transparent_28%)]" />
 
           <div className="relative z-10">
@@ -486,7 +504,7 @@ export default function JoinPage() {
                 DADOKDADOK BOOK CLUB
               </span>
               <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-black tracking-[0.18em] text-white/90">
-                BINGO ENTRY
+                1ST ANNIVERSARY
               </span>
               <span className="rounded-full bg-[linear-gradient(90deg,#7c3aed_0%,#a855f7_55%,#ec4899_100%)] px-3 py-1 text-[11px] font-black tracking-[0.16em] text-white shadow">
                 AUTO JOIN
@@ -494,9 +512,9 @@ export default function JoinPage() {
             </div>
 
             <h1 className="text-3xl font-black leading-tight md:text-5xl">
-              빙고 참가
+              다독다독 
               <br />
-              <span className="text-[#ffe89a]">Book Bingo Entry</span>
+              <span className="text-[#ffe89a]">1st Anniversary</span>
             </h1>
 
             <p className="mt-4 max-w-2xl break-keep text-sm font-medium leading-7 text-white/88 md:text-[15px]">

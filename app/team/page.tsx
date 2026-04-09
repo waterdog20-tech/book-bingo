@@ -58,6 +58,18 @@ const BINGO_LINES = [
   [5, 9, 13, 17, 21],
 ];
 
+const headerGradientStops = [
+  { color: "#081435", stop: "0%" },
+  { color: "#358ddf", stop: "55%" },
+  { color: "#ffffff", stop: "100%" },
+];
+
+const headerGradientStyle = {
+  backgroundImage: `linear-gradient(135deg, ${headerGradientStops
+    .map((item) => `${item.color} ${item.stop}`)
+    .join(", ")})`,
+};
+
 function countBingos(cells: BingoCell[]) {
   const checked = new Set(
     cells.filter((cell) => cell.is_checked).map((cell) => cell.cell_number)
@@ -117,7 +129,7 @@ export default function TeamPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-
+  const [showOpponentBoard, setShowOpponentBoard] = useState(false);
 
   const [gameId, setGameId] = useState("");
   const [teamId, setTeamId] = useState("");
@@ -1102,7 +1114,7 @@ if (
       <>
         {/* desktop */}
         <aside className="hidden 2xl:block">
-  <div className="fixed right-6 top-1/2 z-30 -translate-y-1/2">
+  <div className="fixed right-4 top-3/4 z-30 -translate-y-1/3">
     <div className="w-[220px] overflow-hidden rounded-[24px] border border-[#dcc9a8] bg-[linear-gradient(180deg,#fffaf0_0%,#f7ead3_100%)] shadow-[0_18px_38px_rgba(73,52,24,0.18)]">
       <div className="border-b border-[#ead9bb] bg-[linear-gradient(90deg,#4a3429_0%,#6b4733_50%,#8a5a3f_100%)] px-4 py-3">
         <p className="text-[11px] font-black tracking-[0.18em] text-[#ffe08a]">
@@ -1409,7 +1421,41 @@ if (
     </button>
   );
 };
+const renderOpponentMiniBoard = () => {
+  const checkedSet = new Set(
+    opponentCells.filter((cell) => cell.is_checked).map((cell) => cell.cell_number)
+  );
 
+  const completedOpponentLines = getCompletedLines(opponentCells);
+
+  const isOnOpponentCompletedLine = (cellNumber: number) => {
+    return completedOpponentLines.some((line) => line.includes(cellNumber));
+  };
+
+  return (
+    <div className="grid grid-cols-5 gap-2">
+      {Array.from({ length: 25 }, (_, i) => i + 1).map((cellNumber) => {
+        const checked = checkedSet.has(cellNumber);
+        const onLine = isOnOpponentCompletedLine(cellNumber);
+
+        return (
+          <div
+            key={cellNumber}
+            className={`flex aspect-square items-center justify-center rounded-[10px] border text-xs font-black ${
+              checked
+                ? onLine
+                  ? "border-[#8c5227] bg-[linear-gradient(135deg,#c8843b_0%,#8c5227_100%)] text-white"
+                  : "border-[#1f8a70] bg-[linear-gradient(135deg,#27a17f_0%,#42c59e_100%)] text-white"
+                : "border-[#d9c7a7] bg-[linear-gradient(135deg,#fffaf0_0%,#f3e5c9_100%)] text-[#7b5a32]"
+            }`}
+          >
+            {cellNumber}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
   const renderEditableForm = (target: "opponent" | "self") => {
     const numbers =
       target === "opponent"
@@ -1627,7 +1673,10 @@ if (
 
     <div className="mx-auto max-w-7xl overflow-hidden rounded-[28px] border border-[#e7dcc8] bg-[#fffaf2] shadow-[0_18px_50px_rgba(73,52,24,0.12)]">
 
-      <div className="relative border-b border-[#e7dcc8] bg-[linear-gradient(135deg,#2b211b_0%,#4a3429_52%,#7b3f56_100%)] px-5 py-6 text-white md:px-8 md:py-7">
+      <div
+  className="relative border-b border-[#e7dcc8] px-5 py-6 text-white md:px-8 md:py-7"
+  style={headerGradientStyle}
+>
   <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,215,120,0.12),transparent_28%)]" />
 
   <div className="relative z-10 flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
@@ -1677,7 +1726,7 @@ if (
         type="button"
         onClick={handleRefresh}
         disabled={refreshing}
-        className="rounded-2xl border border-white/15 bg-white/12 px-4 py-2.5 text-sm font-black text-white shadow transition hover:bg-white/20 disabled:opacity-50"
+        className="min-w-[150px] rounded-[22px] bg-[linear-gradient(135deg,#7c3aed_0%,#c026d3_50%,#ec4899_100%)] px-6 py-4 text-base font-black text-white shadow-[0_14px_28px_rgba(168,85,247,0.28)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_34px_rgba(168,85,247,0.35)]"
       >
         {refreshing ? "새로고침 중..." : "새로고침"}
       </button>
@@ -1685,87 +1734,7 @@ if (
   </div>
 </div>
 
-        <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-  <div className="rounded-[24px] border border-[#e4d6bf] bg-[linear-gradient(180deg,#fffdf8_0%,#f8efe1_100%)] p-5 shadow-[0_10px_24px_rgba(73,52,24,0.07)]">
-    <p className="text-[11px] font-black tracking-[0.16em] text-[#8b6b39]">GAME TITLE</p>
-    <p className="mt-3 text-2xl font-black leading-tight text-[#241913]">
-      {game?.name || "-"}
-    </p>
-    <p className="mt-2 text-sm font-semibold text-[#6b5848]">
-      다독다독 1주년 북빙고 이벤트 게임명
-    </p>
-  </div>
-
-  <div className="rounded-[24px] border border-[#e4d6bf] bg-[linear-gradient(180deg,#fffdf8_0%,#f8efe1_100%)] p-5 shadow-[0_10px_24px_rgba(73,52,24,0.07)]">
-    <div className="flex items-start justify-between gap-3">
-      <div>
-        <p className="text-[11px] font-black tracking-[0.16em] text-[#8b6b39]">GAME STATUS</p>
-        <p className="mt-3 text-2xl font-black leading-tight text-[#241913]">
-          {statusMeta?.label || game?.status || "-"}
-        </p>
-      </div>
-
-      {statusMeta && (
-        <span
-          className={`rounded-full bg-gradient-to-r ${statusMeta.accent} px-3 py-1 text-[11px] font-black tracking-[0.14em] text-white shadow`}
-        >
-          {statusMeta.badge}
-        </span>
-      )}
-    </div>
-
-    <p className="mt-2 text-sm font-semibold text-[#6b5848]">
-      {statusMeta?.description || "현재 게임 상태 정보입니다."}
-    </p>
-  </div>
-
-  <div className="rounded-[24px] border border-[#e4d6bf] bg-[linear-gradient(180deg,#fffdf8_0%,#f8efe1_100%)] p-5 shadow-[0_10px_24px_rgba(73,52,24,0.07)]">
-    <p className="text-[11px] font-black tracking-[0.16em] text-[#8b6b39]">PLAYER</p>
-    <p className="mt-3 text-2xl font-black leading-tight text-[#241913]">
-      {member?.name || memberName || "-"}
-    </p>
-    <div className="mt-3 flex flex-wrap gap-2">
-      <span className="rounded-full bg-[#2f2219] px-3 py-1 text-xs font-black text-[#f5d88a] shadow">
-        {member?.is_leader ? "대표" : "팀원"}
-      </span>
-      <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-[#6b5848] ring-1 ring-[#eadfcf]">
-        {isLeader ? "리더 세션" : "멤버 세션"}
-      </span>
-    </div>
-  </div>
-
-  <div className="rounded-[24px] border border-[#e4d6bf] bg-[linear-gradient(180deg,#fffdf8_0%,#f8efe1_100%)] p-5 shadow-[0_10px_24px_rgba(73,52,24,0.07)]">
-    <p className="text-[11px] font-black tracking-[0.16em] text-[#8b6b39]">MY TEAM</p>
-    <p className="mt-3 text-2xl font-black leading-tight text-[#241913]">
-      {myTeam?.name || "-"}
-    </p>
-    <p className="mt-2 text-sm font-semibold text-[#6b5848]">
-      우리 팀의 북빙고 보드입니다.
-    </p>
-  </div>
-
-  <div className="rounded-[24px] border border-[#e4d6bf] bg-[linear-gradient(180deg,#fffdf8_0%,#f8efe1_100%)] p-5 shadow-[0_10px_24px_rgba(73,52,24,0.07)]">
-    <p className="text-[11px] font-black tracking-[0.16em] text-[#8b6b39]">OPPONENT TEAM</p>
-    <p className="mt-3 text-2xl font-black leading-tight text-[#241913]">
-      {opponentTeam?.name || "대기중"}
-    </p>
-    <p className="mt-2 text-sm font-semibold text-[#6b5848]">
-      {opponentTeam ? "상대 팀과 대결 중입니다." : "상대 팀의 합류를 기다리는 중입니다."}
-    </p>
-  </div>
-
-  <div className="rounded-[24px] border border-[#e4d6bf] bg-[linear-gradient(180deg,#fffdf8_0%,#f8efe1_100%)] p-5 shadow-[0_10px_24px_rgba(73,52,24,0.07)]">
-    <p className="text-[11px] font-black tracking-[0.16em] text-[#8b6b39]">SESSION ROLE</p>
-    <p className="mt-3 text-2xl font-black leading-tight text-[#241913]">
-      {isLeader ? "대표 권한" : "팀원 권한"}
-    </p>
-    <p className="mt-2 text-sm font-semibold text-[#6b5848]">
-      {isLeader
-        ? "입력과 저장을 진행할 수 있는 대표 세션입니다."
-        : "대표 진행을 함께 확인하는 팀원 세션입니다."}
-    </p>
-  </div>
-</div>
+      
 
         {error && (
           <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
@@ -1948,145 +1917,162 @@ if (
      
 
   {(displayStatus === "playing" || displayStatus === "finished") && (
-  <div className="space-y-6">
-    <div className="space-y-5">
-      <div className="overflow-hidden rounded-[26px] border border-[#dcc9a8] bg-[linear-gradient(135deg,#fffaf0_0%,#f8ecd8_100%)] shadow-[0_12px_30px_rgba(73,52,24,0.08)]">
-        <div className="border-b border-[#ead9bb] bg-[linear-gradient(90deg,#4a3429_0%,#6b4733_50%,#8a5a3f_100%)] px-5 py-3 md:px-6">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <span className="rounded-full bg-[#ffe08a] px-3 py-1 text-xs font-black tracking-[0.18em] text-[#3a2612]">
-                ROUND STATUS
-              </span>
-              <span className="text-sm font-bold text-white/90">
-                {game?.status === "finished" ? "FINAL RESULT" : "LIVE PLAY"}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-4 px-5 py-5 md:px-6 md:py-6 xl:flex-row xl:items-center xl:justify-between">
-          <div className="max-w-2xl">
-            <p className="text-xs font-black tracking-[0.16em] text-[#8b6b39]">
-              {game?.status === "finished" ? "GAME RESULT" : "CURRENT BINGO"}
-            </p>
-            <p className="mt-2 text-4xl font-black leading-none text-[#241913] md:text-5xl">
-              {game?.status === "finished" ? "종료" : `${bingoCount}줄`}
-            </p>
-            <p className="mt-3 break-keep text-sm font-semibold leading-7 text-[#6b5848] md:text-[20px]">
-              {game?.status === "finished"
-                ? "게임이 종료되었습니다. 결과 확인 버튼을 눌러 승패 연출과 최종 결과를 확인하세요."
-                : "칸을 클릭하면 체크되고, 다시 클릭하면 본인이 체크한 칸만 해제할 수 있습니다. 3줄 이상 완성되면 빙고 버튼이 활성화됩니다."}
-            </p>
-          </div>
-
-          <div className="flex shrink-0 items-center">
-            {displayStatus === "playing" ? (
-              <button
-                type="button"
-                onClick={handleBingo}
-                disabled={!canBingo}
-                className={`min-w-[132px] rounded-[22px] px-6 py-4 text-base font-black transition-all duration-200 ${
-                  canBingo
-                    ? "bg-[linear-gradient(135deg,#ff5f7a_0%,#ff7b54_45%,#ffb347_100%)] text-white shadow-[0_14px_28px_rgba(255,95,122,0.35)] hover:-translate-y-0.5 hover:shadow-[0_18px_34px_rgba(255,95,122,0.42)]"
-                    : "cursor-not-allowed bg-[#c9d2df] text-white shadow-none"
-                }`}
-              >
-                {bingoSubmitting ? "처리 중..." : "빙고!"}
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleShowResult}
-                className="min-w-[150px] rounded-[22px] bg-[linear-gradient(135deg,#7c3aed_0%,#c026d3_50%,#ec4899_100%)] px-6 py-4 text-base font-black text-white shadow-[0_14px_28px_rgba(168,85,247,0.28)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_34px_rgba(168,85,247,0.35)]"
-              >
-                {resultChecked ? "결과 다시 보기" : "결과 확인"}
-              </button>
-            )}
+  <div className="space-y-5">
+    <div className="overflow-hidden rounded-[26px] border border-[#dcc9a8] bg-[linear-gradient(135deg,#fffaf0_0%,#f8ecd8_100%)] shadow-[0_12px_30px_rgba(73,52,24,0.08)]">
+      <div
+        className="border-b border-[#e7dcc8] px-5 py-3 text-white md:px-6"
+        style={headerGradientStyle}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="rounded-full bg-[#ffe08a] px-3 py-1 text-xs font-black tracking-[0.18em] text-[#3a2612]">
+              TEAM STATUS
+            </span>
+            <span className="text-sm font-bold text-white/90">
+              {game?.status === "finished" ? "FINAL RESULT" : "LIVE PLAY"}
+            </span>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-        <div className="rounded-[22px] border border-[#e4d6bf] bg-white p-5 shadow-[0_8px_24px_rgba(73,52,24,0.06)]">
-          <p className="text-xs font-black tracking-[0.16em] text-[#8b6b39]">CHECK COUNT</p>
-          <p className="mt-2 text-4xl font-black leading-none text-[#241913]">
-            {myCells.filter((cell) => cell.is_checked).length}
-          </p>
-          <p className="mt-3 text-sm font-semibold text-[#6b5848]">현재 체크된 책의 수</p>
+      <div className="space-y-4 px-5 py-5 md:px-6 md:py-5">
+        {/* Row 1 */}
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-[20px] border border-[#e4d6bf] bg-white px-5 py-4 shadow-[0_8px_20px_rgba(73,52,24,0.05)]">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-black tracking-[0.16em] text-[#8b6b39]">
+                  GAME STATUS
+                </p>
+                <p className="mt-2 text-[32px] font-black leading-none text-[#241913]">
+                  {statusMeta?.label || game?.status || "-"}
+                </p>
+              </div>
+
+              {statusMeta && (
+                <span
+                  className={`rounded-full bg-gradient-to-r ${statusMeta.accent} px-3 py-1 text-[11px] font-black tracking-[0.14em] text-white shadow`}
+                >
+                  {statusMeta.badge}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-[20px] border border-[#e4d6bf] bg-white px-5 py-4 shadow-[0_8px_20px_rgba(73,52,24,0.05)]">
+            <p className="text-[11px] font-black tracking-[0.16em] text-[#8b6b39]">
+              PLAYER
+            </p>
+
+            <div className="mt-2 flex items-center gap-3">
+              <p className="text-[32px] font-black leading-none text-[#241913]">
+                {member?.name || memberName || "-"}
+              </p>
+
+              <span className="rounded-full bg-[#2f2219] px-3 py-1 text-xs font-black text-[#f5d88a] shadow">
+                {member?.is_leader ? "대표" : "팀원"}
+              </span>
+            </div>
+          </div>
+
+          <div className="rounded-[20px] border border-[#e4d6bf] bg-white px-5 py-4 shadow-[0_8px_20px_rgba(73,52,24,0.05)]">
+            <p className="text-[11px] font-black tracking-[0.16em] text-[#8b6b39]">
+              CHECK COUNT
+            </p>
+            <p className="mt-2 text-[36px] font-black leading-none text-[#241913]">
+              {myCells.filter((cell) => cell.is_checked).length}
+            </p>
+          </div>
+
+          <div className="rounded-[20px] border border-[#e4d6bf] bg-white px-5 py-4 shadow-[0_8px_20px_rgba(73,52,24,0.05)]">
+            <p className="text-[11px] font-black tracking-[0.16em] text-[#8b6b39]">
+              CHECK BINGO
+            </p>
+            <p className="mt-2 text-[36px] font-black leading-none text-[#241913]">
+              {bingoCount}
+            </p>
+          </div>
         </div>
 
-        <div className="rounded-[22px] border border-[#e4d6bf] bg-white p-5 shadow-[0_8px_24px_rgba(73,52,24,0.06)]">
-          <p className="text-xs font-black tracking-[0.16em] text-[#8b6b39]">BINGO COUNT</p>
-          <p className="mt-2 text-4xl font-black leading-none text-[#241913]">{bingoCount}</p>
-          <p className="mt-3 text-sm font-semibold text-[#6b5848]">완성된 빙고 줄 수</p>
-        </div>
+        {/* Row 2 */}
+<div className="grid gap-3 xl:grid-cols-2">
+  <div className="rounded-[22px] border border-[#e4d6bf] bg-white px-5 py-5 shadow-[0_8px_20px_rgba(73,52,24,0.05)] flex min-h-[220px] flex-col">
+    <div>
+      <p className="text-[11px] font-black tracking-[0.16em] text-[#8b6b39]">
+        OPPONENT BOARD
+      </p>
+      <p className="mt-2 text-[34px] font-black leading-none text-[#241913]">
+        상대 팀 현황
+      </p>
+      <p className="mt-3 text-sm font-semibold text-[#6b5848]">
+        작은 빙고판으로 상대 팀 진행 상황을 확인할 수 있습니다.
+      </p>
+    </div>
 
-        <div className="rounded-[22px] border border-[#e4d6bf] bg-white p-5 shadow-[0_8px_24px_rgba(73,52,24,0.06)]">
-          <p className="text-xs font-black tracking-[0.16em] text-[#8b6b39]">PLAY STATUS</p>
-          <p className="mt-2 text-3xl font-black leading-none text-[#241913]">
-            {game?.status === "finished"
-              ? "게임 종료"
-              : savingCellId || bingoSubmitting
-              ? "처리 중"
-              : "플레이 중"}
-          </p>
-          <p className="mt-3 text-sm font-semibold text-[#6b5848]">
-            {game?.status === "finished"
-              ? "최종 결과가 확정되었습니다."
-              : savingCellId || bingoSubmitting
-              ? "입력 또는 처리 작업 진행 중"
-              : "정상적으로 플레이 중"}
-          </p>
-        </div>
+    <div className="mt-auto flex pt-5">
+      <button
+        type="button"
+        onClick={() => setShowOpponentBoard(true)}
+        className="inline-flex h-[56px] min-w-[220px] items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#ff6b6b_0%,#ff8a5b_55%,#f7b733_100%)] px-6 text-base font-black text-white shadow-[0_12px_24px_rgba(255,107,107,0.26)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_30px_rgba(255,107,107,0.32)]"
+      >
+        상대 팀 빙고판 보기
+      </button>
+    </div>
+  </div>
 
-        <div className="rounded-[22px] border border-[#e4d6bf] bg-white p-5 shadow-[0_8px_24px_rgba(73,52,24,0.06)]">
-          <p className="text-xs font-black tracking-[0.16em] text-[#8b6b39]">
-            {game?.status === "finished" ? "RESULT STATUS" : "BINGO READY"}
-          </p>
-          <p className="mt-2 text-3xl font-black leading-none text-[#241913]">
-            {game?.status === "finished"
-              ? resultChecked
-                ? "공개 완료"
-                : "확인 대기"
-              : canBingo
-              ? "선언 가능"
-              : "아직 불가"}
-          </p>
-          <p className="mt-3 text-sm font-semibold text-[#6b5848]">
-            {game?.status === "finished"
-              ? resultChecked
-                ? "결과 연출까지 확인했습니다."
-                : "상단 버튼으로 결과를 확인하세요."
-              : canBingo
-              ? "이제 빙고 선언 버튼을 누를 수 있습니다."
-              : "빙고 3줄 이상이 되면 활성화됩니다."}
-          </p>
-        </div>
-		  
-		  <div className="rounded-[22px] border border-[#e4d6bf] bg-white p-5 shadow-[0_8px_24px_rgba(73,52,24,0.06)]">
-          <p className="text-xs font-black tracking-[0.16em] text-[#8b6b39]">
-            OPPONENT CHECK
-          </p>
-          <p className="mt-2 text-4xl font-black leading-none text-[#241913]">
-            {opponentCheckedCount}
-          </p>
-          <p className="mt-3 text-sm font-semibold text-[#6b5848]">
-            상대 팀이 체크한 책의 수
-          </p>
-        </div>
+  <div className="rounded-[22px] border border-[#e4d6bf] bg-white px-5 py-5 shadow-[0_8px_20px_rgba(73,52,24,0.05)] flex min-h-[220px] flex-col">
+    <div>
+      <p className="text-[11px] font-black tracking-[0.16em] text-[#8b6b39]">
+        {displayStatus === "finished" ? "RESULT ACTION" : "BINGO ACTION"}
+      </p>
 
-        <div className="rounded-[22px] border border-[#e4d6bf] bg-white p-5 shadow-[0_8px_24px_rgba(73,52,24,0.06)]">
-          <p className="text-xs font-black tracking-[0.16em] text-[#8b6b39]">
-            OPPONENT BINGO
-          </p>
-          <p className="mt-2 text-4xl font-black leading-none text-[#241913]">
-            {opponentBingoCount}
-          </p>
-          <p className="mt-3 text-sm font-semibold text-[#6b5848]">
-            상대 팀의 완성 빙고 줄 수
-          </p>
-        </div>
-		
+      <p className="mt-2 text-[34px] font-black leading-none text-[#241913]">
+        {displayStatus === "finished"
+          ? resultChecked
+            ? "결과 공개"
+            : "결과 확인"
+          : canBingo
+          ? "빙고 가능"
+          : "아직 불가"}
+      </p>
+
+      <p className="mt-3 text-sm font-semibold text-[#6b5848]">
+        {displayStatus === "finished"
+          ? resultChecked
+            ? "결과 연출을 다시 확인할 수 있습니다."
+            : "결과 확인 버튼을 눌러 승패를 확인하세요."
+          : canBingo
+          ? "지금 바로 빙고를 선언할 수 있습니다."
+          : "빙고 3줄 이상이 되면 활성화됩니다."}
+      </p>
+    </div>
+
+    <div className="mt-auto flex pt-5">
+      {displayStatus === "playing" ? (
+        <button
+          type="button"
+          onClick={handleBingo}
+          disabled={!canBingo}
+          className={`inline-flex h-[56px] min-w-[220px] items-center justify-center rounded-[18px] px-6 text-base font-black transition-all duration-200 ${
+            canBingo
+              ? "bg-[linear-gradient(135deg,#ff6b6b_0%,#ff8a5b_55%,#f7b733_100%)] text-white shadow-[0_12px_24px_rgba(255,107,107,0.26)] hover:-translate-y-0.5 hover:shadow-[0_16px_30px_rgba(255,107,107,0.32)]"
+              : "bg-[linear-gradient(135deg,#cfd8e3_0%,#bcc7d6_100%)] text-white shadow-none cursor-not-allowed"
+          }`}
+        >
+          {bingoSubmitting ? "처리 중..." : "빙고!"}
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={handleShowResult}
+          className="inline-flex h-[56px] min-w-[220px] items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#7c3aed_0%,#c026d3_50%,#ec4899_100%)] px-6 text-base font-black text-white shadow-[0_12px_24px_rgba(168,85,247,0.26)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_30px_rgba(168,85,247,0.32)]"
+        >
+          {resultChecked ? "결과 다시 보기" : "결과 확인"}
+        </button>
+      )}
+    </div>
+  </div>
+</div>
       </div>
     </div>
 
@@ -2111,15 +2097,15 @@ if (
     )}
 
     <div>
-  <h2 className="mb-3 text-lg font-bold text-slate-950">내 팀 빙고판</h2>
-  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-    {displayStatus === "playing"
-      ? myCells.map(renderPlayableCell)
-      : myCells.map(renderCellPreview)}
-  </div>
+      <h2 className="mb-3 text-lg font-bold text-slate-950">내 팀 빙고판</h2>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        {displayStatus === "playing"
+          ? myCells.map(renderPlayableCell)
+          : myCells.map(renderCellPreview)}
+      </div>
 
-  {renderMiniStatusBoard()}
-</div>
+      {renderMiniStatusBoard()}
+    </div>
   </div>
 )}
 
@@ -2153,6 +2139,57 @@ if (
           </div>
         )}
       </div>
+      {showOpponentBoard && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+    <div className="w-full max-w-[420px] rounded-[28px] border border-[#e4d6bf] bg-[linear-gradient(180deg,#fffdf8_0%,#f8efe1_100%)] p-6 shadow-[0_24px_50px_rgba(73,52,24,0.22)]">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-[11px] font-black tracking-[0.16em] text-[#8b6b39]">
+            OPPONENT BOARD
+          </p>
+          <h3 className="mt-2 text-2xl font-black text-[#241913]">
+            상대 팀 빙고판
+          </h3>
+          <p className="mt-2 text-sm font-semibold text-[#6b5848]">
+            체크된 칸과 완성된 빙고 줄을 확인할 수 있습니다.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setShowOpponentBoard(false)}
+          className="rounded-full border border-[#d7c8b0] bg-white px-3 py-1.5 text-xs font-black text-[#4d3a28] shadow-sm"
+        >
+          닫기
+        </button>
+      </div>
+
+      <div className="mt-5">
+        {renderOpponentMiniBoard()}
+      </div>
+
+      <div className="mt-5 grid grid-cols-2 gap-3">
+        <div className="rounded-2xl border border-[#eadfcf] bg-white/90 px-4 py-3">
+          <p className="text-[11px] font-black tracking-[0.16em] text-[#8b6b39]">
+            CHECK
+          </p>
+          <p className="mt-2 text-3xl font-black text-[#241913]">
+            {opponentCheckedCount}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-[#eadfcf] bg-white/90 px-4 py-3">
+          <p className="text-[11px] font-black tracking-[0.16em] text-[#8b6b39]">
+            BINGO
+          </p>
+          <p className="mt-2 text-3xl font-black text-[#241913]">
+            {opponentBingoCount}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
     </main>
   );
 }

@@ -6,28 +6,35 @@ import { useEffect, useState } from "react";
 const bingoPreview = Array.from({ length: 25 }, (_, i) => i + 1);
 
 const balloons = [
-  { left: "34%", size: 74, duration: 18, delay: 4, color: "from-[#f4d99f] to-[#f6ead0]" },
-  { left: "46%", size: 52, duration: 14, delay: 2, color: "from-[#bcd9f7] to-[#d9ecfb]" },
-  { left: "49%", size: 80, duration: 19, delay: 1, color: "from-[#E4d99f] to-[#g6ead0]" },
-  { left: "44%", size: 40, duration: 16, delay: 7, color: "from-[#cdb9f5] to-[#e4d8fb]" },
+  { left: "5%", size: 70, duration: 15, delay: 0, color: "from-pink-400 to-rose-300" },
+  { left: "15%", size: 50, duration: 18, delay: 3, color: "from-sky-400 to-blue-300" },
+  { left: "25%", size: 85, duration: 14, delay: 1, color: "from-yellow-300 to-amber-200" },
+  { left: "38%", size: 60, duration: 16, delay: 4, color: "from-purple-400 to-fuchsia-300" },
+  { left: "50%", size: 90, duration: 20, delay: 0, color: "from-emerald-400 to-teal-300" },
+  { left: "65%", size: 55, duration: 15, delay: 2, color: "from-orange-400 to-red-300" },
+  { left: "80%", size: 75, duration: 17, delay: 5, color: "from-indigo-400 to-cyan-300" },
+  { left: "92%", size: 65, duration: 19, delay: 1, color: "from-pink-300 to-purple-300" }
   
 ];
 
 const fireworks = [
-  { top: "93%", left: "37%", delay: "0s", colors: ["#ff4e50", "#f9d423", "#ffffff"] },
+  { top: "63%", left: "37%", delay: "0s", colors: ["#ff4e50", "#f9d423", "#ffffff"] },
 
-  
 ];
 
 const marqueeItems = [
   "1주년 빙고 페스티벌",
   "Book Bingo Festival",
-  "팀 선택 후 바로 입장",
-  "분위기부터 완성",
+  "주서영 때문에 짜증~",
   "오늘은 다독다독 축제",
+  "회원들이 좋아할까?",
   "ANNIVERSARY SPECIAL",
 ];
-
+const headerGradientStops = [
+  { color: "#081435", stop: "0%" },
+  { color: "#358ddf", stop: "55%" },
+  { color: "#ffffff", stop: "100%" },
+];
 export default function HomePage() {
   const [hasSession, setHasSession] = useState(false);
   const [teamName, setTeamName] = useState("");
@@ -126,8 +133,15 @@ export default function HomePage() {
 
       <div className="mx-auto max-w-3xl overflow-hidden rounded-[30px] border border-[#e7dcc8] bg-[#fffaf2] shadow-[0_18px_50px_rgba(73,52,24,0.12)]">
         {/* 헤더 */}
-        <div className="relative overflow-hidden border-b border-[#e7dcc8] bg-[linear-gradient(135deg,#2b211b_0%,#4a3429_52%,#5b3f8f_100%)] px-6 py-6 text-white md:px-8 md:py-7">
-  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,215,120,0.12),transparent_28%)]" />
+       <div
+  className="relative overflow-hidden border-b border-[#e7dcc8] px-6 py-6 text-white md:px-8 md:py-7"
+  style={{
+    backgroundImage: `linear-gradient(135deg, ${headerGradientStops
+      .map((item) => `${item.color} ${item.stop}`)
+      .join(", ")})`,
+  }}
+>
+  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(245, 49, 0, 0.12),transparent_28%)]" />
 
   <div className="relative z-10">
     <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -135,7 +149,7 @@ export default function HomePage() {
         DADOKDADOK BOOK CLUB
       </span>
       <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-black tracking-[0.18em] text-white/90">
-        BINGO ENTRY
+        1ST ANNIVERSARY
       </span>
       <span className="rounded-full bg-[linear-gradient(90deg,#7c3aed_0%,#a855f7_55%,#ec4899_100%)] px-3 py-1 text-[11px] font-black tracking-[0.16em] text-white shadow">
         AUTO JOIN
@@ -157,95 +171,118 @@ export default function HomePage() {
         {/* 본문 */}
         <div className="space-y-4 px-6 py-5 md:px-8 md:py-6">
           {/* 빙고판 섹션 */}
-          <div className="rounded-[26px] border border-[#e4d6bf] bg-[linear-gradient(180deg,#fffdf8_0%,#f8efe1_100%)] p-4 shadow-[0_12px_28px_rgba(73,52,24,0.08)] md:p-5">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[10px] font-black tracking-[0.18em] text-[#f36f86]">
-                  EVENT PREVIEW
-                </p>
-                <h2 className="mt-1 text-xl font-black text-[#241913] md:text-[28px]">
-                  1주년 빙고 페스티벌
-                </h2>
-              </div>
+          {/* 빙고판 섹션 */}
+<div className="rounded-[28px] border border-[#e6d8ea] bg-[linear-gradient(135deg,#fff8fb_0%,#fff6ef_46%,#f7f0ff_100%)] p-5 shadow-[0_16px_36px_rgba(96,63,143,0.10)] md:p-6">
+  <div className="relative overflow-hidden rounded-[24px] border border-white/70 bg-white/55 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-sm">
+    <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-[linear-gradient(90deg,rgba(255,248,251,0.92),transparent)]" />
+    <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-[linear-gradient(270deg,rgba(247,240,255,0.92),transparent)]" />
 
-              <div className="rounded-full bg-[linear-gradient(90deg,#f36f86_0%,#f39a3c_100%)] px-3 py-1.5 text-[10px] font-black text-white shadow">
-                LIVE NOW
-              </div>
-            </div>
+    <div className="flex min-w-max animate-marquee gap-2 px-2">
+      {[...marqueeItems, ...marqueeItems].map((item, index) => (
+        <div
+          key={`${item}-${index}`}
+          className="rounded-full border border-white/70 bg-white/80 px-3 py-1.5 text-[11px] font-black tracking-[0.08em] text-[#6a547b] shadow-[0_4px_10px_rgba(96,63,143,0.06)]"
+        >
+          {item}
+        </div>
+      ))}
+    </div>
+  </div>
 
-            <div className="overflow-hidden rounded-full border border-[#eadfcf] bg-white/80 py-2 shadow-inner">
-              <div className="flex min-w-max animate-marquee gap-2 px-3">
-                {[...marqueeItems, ...marqueeItems].map((item, index) => (
-                  <div
-                    key={`${item}-${index}`}
-                    className="rounded-full bg-[linear-gradient(90deg,#fff1f2_0%,#fff7ed_50%,#eff6ff_100%)] px-3 py-1.5 text-xs font-black text-[#4d5b73] shadow-sm"
-                  >
-                    ✨ {item}
-                  </div>
-                ))}
-              </div>
-            </div>
+  <div className="mt-6 grid items-center gap-6 md:grid-cols-[1.05fr_0.95fr]">
+    <div className="relative">
+      <div className="inline-flex items-center rounded-full border border-[#e8d9f0] bg-white/80 px-3 py-1 text-[11px] font-black tracking-[0.18em] text-[#8b67b4] shadow-sm">
+        1ST ANNIVERSARY
+      </div>
 
-            <div className="mt-4 rounded-[24px] border border-[#eadfcf] bg-white/90 p-4 shadow-[0_10px_24px_rgba(73,52,24,0.05)]">
-              <div className="mb-3 flex items-center justify-between">
-                <div>
-                  <p className="text-[12px] font-black uppercase tracking-[0.24em] text-[#8c5be8]">
-                    BINGO BOARD
-                  </p>
-                  <p className="mt-0.1 text-base font-black text-[#1f2b44]">
-                    CENTER PREVIEW
-                  </p>
-                </div>
+      <h2 className="mt-4 text-[clamp(2rem,4vw,4.25rem)] font-black leading-[0.92] tracking-[-0.05em] text-[#3c2850]">
+        Book Bingo
+        <br />
+        <span className="bg-[linear-gradient(90deg,#6f42c1_0%,#d9468d_52%,#f59e0b_100%)] bg-clip-text text-transparent">
+          Festival
+        </span>
+      </h2>
 
-                <div className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[15px] font-black text-emerald-600">
-                  READY
-                </div>
-              </div>
+      <p className="mt-4 max-w-xl break-keep text-sm font-semibold leading-7 text-[#705f74] md:text-[15px]">
+        팀을 선택하고 이름을 입력하면 바로 참가할 수 있습니다.
+        독서 취향과 팀워크로 빙고를 완성하고 가장 먼저 선언해보세요.
+      </p>
 
-              {/* 빙고판 살짝 축소 */}
-              <div className="mx-auto grid aspect-square w-full max-w-[550px] grid-cols-5 gap-2.5 md:max-w-[640px] md:gap-3">
-                {bingoPreview.map((num) => {
-                  const highlight = num === 4 || num === 7 || num === 19 || num === 23;
-                  const center = num === 13;
+      <div className="mt-6 flex flex-wrap gap-2">
+        <span className="rounded-full border border-[#ecdff2] bg-white/85 px-3 py-1.5 text-xs font-black text-[#7d6299] shadow-sm">
+          1주년 기념
+        </span>
+        <span className="rounded-full border border-[#f1dde5] bg-white/85 px-3 py-1.5 text-xs font-black text-[#b35d87] shadow-sm">
+          팀 대항 북빙고
+        </span>
+        <span className="rounded-full border border-[#f4e3c8] bg-white/85 px-3 py-1.5 text-xs font-black text-[#b67d2a] shadow-sm">
+          자동 참가
+        </span>
+      </div>
+    </div>
 
-                  return (
-                    <div
-                      key={num}
-                      className={`group relative overflow-hidden rounded-[16px] border transition duration-300 hover:-translate-y-0.5 ${
-                        center
-                          ? "border-[#f3c66a] bg-[linear-gradient(135deg,#fff6da_0%,#f9e5a9_100%)] shadow-[0_10px_22px_rgba(201,162,74,0.18)]"
-                          : highlight
-                          ? "border-[#f4c1cf] bg-[linear-gradient(135deg,#fff1f2_0%,#ffe4e6_100%)] shadow-[0_10px_22px_rgba(243,111,134,0.14)]"
-                          : "border-slate-100 bg-[linear-gradient(135deg,#ffffff_0%,#f7fbff_100%)] shadow-[0_8px_18px_rgba(148,163,184,0.08)]"
-                      }`}
-                    >
-                      <div className="absolute inset-x-0 top-0 h-1/2 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.96),transparent_72%)]" />
-                      <div className="relative flex h-full flex-col items-center justify-center gap-1">
-                        <span className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">
-                         BOOK
-                        </span>
+    <div className="relative">
+      <div className="absolute -left-5 top-8 h-24 w-24 rounded-full bg-[#ffd7e8]/60 blur-2xl" />
+      <div className="absolute -right-3 top-2 h-24 w-24 rounded-full bg-[#ddd1ff]/70 blur-2xl" />
+      <div className="absolute bottom-1 left-10 h-20 w-20 rounded-full bg-[#ffe7b3]/60 blur-2xl" />
 
-                        <span
-                          className={`font-black tracking-[-0.04em] ${
-                            center
-                              ? "text-[clamp(0.95rem,1.8vw,1.45rem)] text-[#a37a1e] [text-shadow:0_1px_0_rgba(255,255,255,0.92),0_3px_8px_rgba(163,122,30,0.16)]"
-                              : highlight
-                              ? "text-[clamp(1rem,1.8vw,1.4rem)] text-[#f36f86] [text-shadow:0_1px_0_rgba(255,255,255,0.92),0_3px_8px_rgba(243,111,134,0.12)]"
-                              : "text-[clamp(1rem,1.8vw,1.4rem)] text-[#1f2b44] [text-shadow:0_1px_0_rgba(255,255,255,0.96),0_2px_6px_rgba(31,43,68,0.08)]"
-                          }`}
-                        >
-                          {center ? "BINGO" : num}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-          
+      <div className="relative rounded-[30px] border border-white/75 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,251,255,0.9)_100%)] p-4 shadow-[0_20px_40px_rgba(96,63,143,0.14)]">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-black tracking-[0.18em] text-[#8b67b4]">
+              FESTIVAL BOARD
+            </p>
+            <p className="mt-1 text-sm font-black text-[#33213f]">
+              CENTER PREVIEW
+            </p>
           </div>
 
+          <div className="rounded-full bg-[linear-gradient(90deg,#7c3aed_0%,#ec4899_100%)] px-3 py-1 text-[11px] font-black text-white shadow">
+            PLAY
+          </div>
+        </div>
+
+        <div className="grid aspect-square grid-cols-5 gap-2 md:gap-2.5">
+          {bingoPreview.map((num) => {
+            const isCenter = num === 13;
+            const isAccentA = [1, 5, 9, 17, 21].includes(num);
+            const isAccentB = [2, 7, 12, 19, 24].includes(num);
+            const isAccentC = [4, 10, 16, 20, 23].includes(num);
+
+            const toneClass = isCenter
+              ? "border-[#f0c35d] bg-[linear-gradient(135deg,#fff0b8_0%,#ffd86b_100%)] text-[#6e4b00] shadow-[0_10px_20px_rgba(240,195,93,0.30)]"
+              : isAccentA
+              ? "border-[#f3c8da] bg-[linear-gradient(135deg,#ffe2ee_0%,#ffd1e2_100%)] text-[#b34e7d]"
+              : isAccentB
+              ? "border-[#dccfff] bg-[linear-gradient(135deg,#eee7ff_0%,#ddd0ff_100%)] text-[#7250c7]"
+              : isAccentC
+              ? "border-[#f4ddb4] bg-[linear-gradient(135deg,#fff0d5_0%,#ffe2ac_100%)] text-[#b67a21]"
+              : "border-[#efe8f4] bg-[linear-gradient(135deg,#ffffff_0%,#faf7fd_100%)] text-[#8d7c99]";
+
+            return (
+              <div
+                key={num}
+                className={`relative flex items-center justify-center overflow-hidden rounded-[18px] border transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_18px_rgba(96,63,143,0.10)] ${toneClass}`}
+              >
+                <div className="absolute inset-x-0 top-0 h-1/2 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.9),transparent_72%)]" />
+
+                {isCenter ? (
+                  <span className="relative text-[clamp(1rem,2vw,1.4rem)] font-black tracking-[-0.04em]">
+                    ★
+                  </span>
+                ) : (
+                  <span className="relative text-[clamp(0.95rem,1.8vw,1.2rem)] font-black tracking-[-0.03em]">
+                    {num}
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
           {/* CTA 하나만 */}
           <Link
             href="/join"
