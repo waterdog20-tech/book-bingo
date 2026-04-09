@@ -204,8 +204,10 @@ export default function HomePage() {
       </h2>
 
       <p className="mt-4 max-w-xl break-keep text-sm font-semibold leading-7 text-[#705f74] md:text-[15px]">
-        팀을 선택하고 이름을 입력하면 바로 참가할 수 있습니다.
-        독서 취향과 팀워크로 빙고를 완성하고 가장 먼저 선언해보세요.
+       읽는 척만 해도 완전 괜찮아요!🤫<br/>
+	   1주년을 즐기는 마음 하나면 충분합니다!<br/>
+	   다들 빙고판 채우러 가실 준비 되셨나요?<br/>
+	   ✨ Let's Read & Play! ✨
       </p>
 
       <div className="mt-6 flex flex-wrap gap-2">

@@ -518,8 +518,10 @@ export default function JoinPage() {
             </h1>
 
             <p className="mt-4 max-w-2xl break-keep text-sm font-medium leading-7 text-white/88 md:text-[15px]">
-              1팀 또는 2팀을 선택하고 이름을 입력하면 자동으로 참가됩니다.
-              같은 팀의 첫 참가자는 대표가 되며, 이후 참가자는 팀원으로 자동 지정됩니다.
+              첫 참가자가 대표가 됩니다. 대표는 바로 우리팀의 빙고판을 만드는 설계자입니다.<br/>
+			  어떤 책으로 판을 채울지, 어떤 전략으로 빙고를 완성할지, 모든 선택이 승부를 가릅니다. <br/>
+			  우리 팀만의 빙고판을 완성하러 가보시죠~~ 
+			  
             </p>
           </div>
         </div>
@@ -531,7 +533,7 @@ export default function JoinPage() {
                 TEAM STATUS
               </p>
               <p className="mt-3 text-2xl font-black leading-tight text-[#241913]">
-                1팀
+                다(들)독(촉)해야 겨우 읽는팀
               </p>
               <div className="mt-3 space-y-2">{renderTeamMembers(team1Members)}</div>
             </div>
@@ -541,7 +543,7 @@ export default function JoinPage() {
                 TEAM STATUS
               </p>
               <p className="mt-3 text-2xl font-black leading-tight text-[#241913]">
-                2팀
+                빛보다 빠른 속독의 달인팀
               </p>
               <div className="mt-3 space-y-2">{renderTeamMembers(team2Members)}</div>
             </div>
@@ -575,7 +577,7 @@ export default function JoinPage() {
                         : "border border-[#d9cab1] bg-white text-[#4d3a28] hover:bg-[#fff8ec]"
                     }`}
                   >
-                    1팀
+                    다(들)독(촉)해야 겨우 읽는팀
                   </button>
 
                   <button
@@ -587,7 +589,7 @@ export default function JoinPage() {
                         : "border border-[#d9cab1] bg-white text-[#4d3a28] hover:bg-[#fff8ec]"
                     }`}
                   >
-                    2팀
+                    빛보다 빠른 속독의 달인팀
                   </button>
                 </div>
               </div>
