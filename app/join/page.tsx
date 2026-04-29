@@ -426,11 +426,33 @@ export default function JoinPage() {
     ));
   };
 
-  return (
-    <main className="min-h-screen bg-[#f6efe4] p-4 md:p-6">
-      <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(255,248,220,0.92),rgba(246,239,228,0.96)_35%,rgba(235,224,205,0.98)_70%,rgba(226,211,188,1)_100%)]" />
-      <div className="fixed inset-0 -z-10 opacity-[0.06] [background-image:linear-gradient(rgba(120,96,64,0.28)_1px,transparent_1px),linear-gradient(90deg,rgba(120,96,64,0.28)_1px,transparent_1px)] [background-size:24px_24px]" />
+ return (
+  <main className="relative min-h-screen overflow-hidden p-3 md:p-5">
+    <div
+      className="fixed inset-0 -z-30"
+      style={{
+        background:
+          "radial-gradient(circle at top, rgba(255,236,244,0.95) 0%, rgba(248,239,255,0.95) 34%, rgba(255,244,221,0.96) 68%, rgba(241,226,205,1) 100%)",
+      }}
+    />
 
+    <div
+      className="fixed inset-0 -z-20"
+      style={{
+        background:
+          "radial-gradient(circle at 12% 18%, rgba(255, 120, 181, 0.07), transparent 24%), radial-gradient(circle at 86% 12%, rgba(124,58,237,0.16), transparent 22%), radial-gradient(circle at 72% 80%, rgba(245,158,11,0.14), transparent 22%)",
+      }}
+    />
+
+    <div
+      className="fixed inset-0 -z-10 opacity-10"
+      style={{
+        backgroundImage:
+          "linear-gradient(rgba(120,96,64,0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(120,96,64,0.18) 1px, transparent 1px)",
+        backgroundSize: "26px 26px",
+      }}
+    />
+  
       {/* 배경 풍선 */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         {mounted &&
@@ -491,7 +513,7 @@ export default function JoinPage() {
           ))}
       </div>
 
-      <div className="mx-auto max-w-3xl overflow-hidden rounded-[30px] border border-[#e7dcc8] bg-[#fffaf2] shadow-[0_18px_50px_rgba(73,52,24,0.12)]">
+      <div className="relative z-10 mx-auto max-w-3xl overflow-hidden rounded-[30px] border border-[#e7dcc8] bg-[#fffaf2] shadow-[0_18px_50px_rgba(73,52,24,0.12)]">
         <div
   className="relative overflow-hidden border-b border-[#e7dcc8] px-6 py-6 text-white md:px-8 md:py-7"
   style={headerGradientStyle}

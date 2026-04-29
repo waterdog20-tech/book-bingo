@@ -25,9 +25,9 @@ const fireworks = [
 const marqueeItems = [
   "1주년 빙고 페스티벌",
   "Book Bingo Festival",
-  "주서영 때문에 짜증~",
+  "책 읽기 지겹다.ㅋ",
   "오늘은 다독다독 축제",
-  "회원들이 좋아할까?",
+  "회원분들 함께해요~",
   "ANNIVERSARY SPECIAL",
 ];
 const headerGradientStops = [
@@ -66,10 +66,33 @@ export default function HomePage() {
     setMemberName("");
   };
 
-  return (
-    <main className="min-h-screen bg-[#f6efe4] p-3 md:p-4">
-      <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(255,248,220,0.92),rgba(246,239,228,0.96)_35%,rgba(235,224,205,0.98)_70%,rgba(226,211,188,1)_100%)]" />
-      <div className="fixed inset-0 -z-10 opacity-[0.06] [background-image:linear-gradient(rgba(120,96,64,0.28)_1px,transparent_1px),linear-gradient(90deg,rgba(120,96,64,0.28)_1px,transparent_1px)] [background-size:24px_24px]" />
+ return (
+  <main className="relative min-h-screen overflow-hidden p-3 md:p-4">
+    <div
+      className="fixed inset-0 -z-30"
+      style={{
+        background:
+          "radial-gradient(circle at top, rgba(255,236,244,0.95) 0%, rgba(248,239,255,0.95) 34%, rgba(255,244,221,0.96) 68%, rgba(241,226,205,1) 100%)",
+      }}
+    />
+
+    <div
+      className="fixed inset-0 -z-20"
+      style={{
+        background:
+          "radial-gradient(circle at 12% 18%, rgba(255, 120, 181, 0.07), transparent 24%), radial-gradient(circle at 86% 12%, rgba(124,58,237,0.16), transparent 22%), radial-gradient(circle at 72% 80%, rgba(245,158,11,0.14), transparent 22%)",
+      }}
+    />
+
+    <div
+      className="fixed inset-0 -z-10 opacity-10"
+      style={{
+        backgroundImage:
+          "linear-gradient(rgba(120,96,64,0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(120,96,64,0.18) 1px, transparent 1px)",
+        backgroundSize: "26px 26px",
+      }}
+    />
+  
 
       {/* 배경 풍선 */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
@@ -163,7 +186,8 @@ export default function HomePage() {
     </h1>
 
     <p className="mt-4 max-w-3xl break-keep text-sm font-medium leading-7 text-white/88 md:text-[15px]">
-      팀을 선택하고 이름을 입력해 다독다독 1주년 북빙고에 바로 입장하세요. 
+      6월이면 벌써 다독다독이 1주년입니다. <br/>
+      책으로 만나고, 빙고로 웃는 1주년 이벤트 <br/> 부담 없이 즐기는 이벤트~
     </p>
   </div>
 </div>

@@ -147,6 +147,7 @@ export default function TeamPage() {
 
   const [formTitles, setFormTitles] = useState<Record<number, string>>({});
   const [formImages, setFormImages] = useState<Record<number, string>>({});
+  const [draggingCellNumber, setDraggingCellNumber] = useState<number | null>(null);
 
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -169,6 +170,7 @@ export default function TeamPage() {
   const completedLines = useMemo(() => getCompletedLines(myCells), [myCells]);
   const bingoCount = useMemo(() => countBingos(myCells), [myCells]);
 
+  
   const opponentCheckedCount = useMemo(
     () => opponentCells.filter((cell) => cell.is_checked).length,
     [opponentCells]
@@ -347,6 +349,34 @@ const getCellLineTypes = (cellNumber: number) => {
     const { data } = supabase.storage.from("bingo-images").getPublicUrl(fileName);
     return data.publicUrl;
   }
+
+async function handleImageFileUpload(file: File, cellNumber: number) {
+  if (!gameId || !teamId) {
+    setError("게임 또는 팀 정보가 없어 이미지를 업로드할 수 없습니다.");
+    return;
+  }
+
+  if (!file.type.startsWith("image/")) {
+    setError("이미지 파일만 업로드할 수 있습니다.");
+    return;
+  }
+
+  try {
+    setSaving(true);
+    setError("");
+
+    const publicUrl = await uploadImageCompressed(file, gameId, teamId);
+
+    setFormImages((prev) => ({
+      ...prev,
+      [cellNumber]: publicUrl,
+    }));
+  } catch (err: any) {
+    setError(err?.message || "이미지 업로드 중 오류가 발생했습니다.");
+  } finally {
+    setSaving(false);
+  }
+}
 
   useEffect(() => {
     const savedGameId = localStorage.getItem("game_id") || "";
@@ -1502,45 +1532,72 @@ const renderOpponentMiniBoard = () => {
                   이미지 업로드
                 </label>
                 <input
-                  type="file"
-                  accept="image/*"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
+  type="file"
+  accept="image/*"
+  onChange={async (e) => {
+    const input = e.currentTarget;
+    const file = input.files?.[0];
+    if (!file) return;
 
-                    try {
-                      setSaving(true);
-                      setError("");
+    await handleImageFileUpload(file, n);
 
-                      const publicUrl = await uploadImageCompressed(file, gameId, teamId);
-
-                      setFormImages((prev) => ({
-                        ...prev,
-                        [n]: publicUrl,
-                  }));
-                    } catch (err: any) {
-                      setError(err?.message || "이미지 업로드 중 오류가 발생했습니다.");
-                    } finally {
-                      setSaving(false);
-                    }
-                  }}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none file:mr-3 file:rounded-lg file:border-0 file:bg-slate-200 file:px-3 file:py-1.5 file:text-slate-700"
-                />
+    input.value = "";
+  }}
+  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none file:mr-3 file:rounded-lg file:border-0 file:bg-slate-200 file:px-3 file:py-1.5 file:text-slate-700"
+/>
               </div>
 
-              <div className="aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
-                {formImages[n] ? (
-                  <img
-                    src={formImages[n]}
-                    alt={`${n}번 미리보기`}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-xs text-slate-400">
-                    이미지 미리보기
-                  </div>
-                )}
-              </div>
+              <div
+  onDragOver={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "copy";
+    setDraggingCellNumber(n);
+  }}
+  onDragLeave={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDraggingCellNumber((prev) => (prev === n ? null : prev));
+  }}
+  onDrop={async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    setDraggingCellNumber(null);
+
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+
+    await handleImageFileUpload(file, n);
+  }}
+  className={`relative aspect-square overflow-hidden rounded-xl border-2 transition ${
+    draggingCellNumber === n
+      ? "border-blue-500 bg-blue-50 ring-4 ring-blue-200"
+      : "border-slate-200 bg-slate-50"
+  }`}
+>
+  {formImages[n] ? (
+    <>
+      <img
+        src={formImages[n]}
+        alt={`${n}번 미리보기`}
+        className="h-full w-full object-cover"
+      />
+      <div className="pointer-events-none absolute inset-x-3 bottom-3 rounded-xl bg-black/45 px-3 py-2 text-center text-[11px] font-bold text-white">
+        이미지를 다시 끌어놓으면 교체됩니다
+      </div>
+    </>
+  ) : (
+    <div className="flex h-full flex-col items-center justify-center px-4 text-center">
+      <p className="text-sm font-black text-slate-500">
+        이미지 미리보기
+      </p>
+      <p className="mt-2 text-xs font-semibold text-slate-400">
+        파일 선택 또는 이미지를 여기로 끌어놓기
+      </p>
+    </div>
+  )}
+</div>
             </div>
           </div>
         ))}
